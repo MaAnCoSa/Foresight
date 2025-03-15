@@ -1,0 +1,32 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "foresight"
+version = "0.0.1"
+description = "The project aims to create a more precise metric for evaluating monster difficulty in Dongeons \u0026 Dragons."
+authors = [
+  { name = "Gerardo, Jesus, Manuel" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
+]
+requires-python = "~=3.10"
+
+
+[tool.ruff]
+line-length = 99
+src = ["foresight"]
+include = ["pyproject.toml", "foresight/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["foresight"]
+force-sort-within-sections = true
+
