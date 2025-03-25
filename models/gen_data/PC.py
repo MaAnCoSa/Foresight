@@ -19,8 +19,14 @@ import math
 class PC:
     def __init__(self):
         self._type = "player"
+        self._level = 1
         self._stats = {"STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 0}
         self._modifiers = {"STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 0}
+        
+        self._status = "conscious"
+        
+        self._prof_bonus = 2
+        
         cha_class = random.choice(
             [
                 "BARD",
@@ -61,6 +67,11 @@ class PC:
             self._class = Sorcerer()
         elif cha_class == "WIZARD":
             self._class = Wizard()
+            
+        self._hp_max = int(self._class._hit_die) + int(self._modifiers["CON"])
+        self._hp = self._hp_max
+        self._ac = 10 + self._modifiers["DEX"]
+        self._initiative = self._modifiers["DEX"]
 
         scores = sorted([random.randint(8, 18) for i in range(6)], reverse=True)
         for i in range(len(scores)):
@@ -68,15 +79,12 @@ class PC:
             self._stats[stat] = scores[i]
             self._modifiers[stat] = math.floor((self._stats[stat] - 10) / 2)
 
-        self._prof_bonus = 2
-
-        self._hp_max = int(self._class._hit_die) + int(self._modifiers["CON"])
-        self._hp = self._hp_max
-        self._ac = 10 + self._modifiers["DEX"]
-        self._initiative = self._modifiers["DEX"]
-        self._status = "conscious"
-
         self._death_saves = {"successes": 0, "failures": 0}
+        
+        
+        if self._class._name == "Barbarian":
+            self._ac += self._modifiers["CON"] # Unarmored Defense
+
 
     def use_action(self, action):
         if action["type"] == "attack":
@@ -89,6 +97,10 @@ class PC:
                 random.randint(1, action["dmg_roll"])
                 + self._modifiers[action["attack_stat"]]
             )
+            
+            if self._class._name == "Barbarian":
+                dmg_roll += self._class._rage_bonus[self._level]
+            
             return {"type": "attack", "attack_roll": attack_roll, "dmg_roll": dmg_roll}
 
     def receive_action(self, action):
