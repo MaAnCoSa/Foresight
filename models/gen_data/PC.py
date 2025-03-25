@@ -93,29 +93,36 @@ class PC:
 
     def receive_action(self, action):
         if action["type"] == "attack":
-            if action["attack_roll"] >= self._ac:
-                if self._status == "death_saves":
-                    self._death_saves["failures"] += 2
-                elif self._status == "conscious":
-                    self._hp -= action["dmg_roll"]
-                    self.check_status()
-                    return {
+            received_attacks = []
+            for attack in action["attacks"]:
+
+                if attack["attack_roll"] >= self._ac:
+                    if self._status == "death_saves":
+                        self._death_saves["failures"] += 2
+                    elif self._status == "conscious":
+                        dmg = 0
+                        for dmg_roll in attack["dmg_roll"]:
+                            self._hp -= dmg_roll["dmg_roll"]
+                            dmg += dmg_roll["dmg_roll"]
+                            self.check_status()
+                        received_attacks.append({
+                            "type": "attack",
+                            "status": "hit",
+                            "AC": self._ac,
+                            "dmg": dmg,
+                            "max_HP": self._hp_max,
+                            "HP": self._hp,
+                        })
+                else:
+                    received_attacks.append({
                         "type": "attack",
-                        "status": "hit",
+                        "status": "miss",
                         "AC": self._ac,
-                        "dmg": action["dmg_roll"],
+                        "dmg": 0,
                         "max_HP": self._hp_max,
                         "HP": self._hp,
-                    }
-            else:
-                return {
-                    "type": "attack",
-                    "status": "miss",
-                    "AC": self._ac,
-                    "dmg": 0,
-                    "max_HP": self._hp_max,
-                    "HP": self._hp,
-                }
+                    })
+            return {"type": "attack", "received_attacks": received_attacks}
 
     def check_status(self):
         if self._hp <= 0 and self._status == "conscious":

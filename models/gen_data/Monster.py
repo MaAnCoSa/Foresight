@@ -3,6 +3,7 @@ import math
 
 class Monster:
     def __init__(self, monster_data):
+        self._name = monster_data["name"]
         self._type = "monster"
         self._stats = {"STR": monster_data["strength"], "DEX": monster_data["dexterity"], "CON": monster_data["constitution"], "INT": monster_data["intelligence"], "WIS": monster_data["wisdom"], "CHA": monster_data["charisma"]}
         self._modifiers = {}
@@ -16,7 +17,7 @@ class Monster:
 
         self._hp_max = monster_data["hit_points"]
         self._hp = self._hp_max
-        self._ac = monster_data["armor_class"]
+        self._ac = monster_data["armor_class"][0]["value"]
         self._initiative = self._modifiers["DEX"]
         self._status = "conscious"
 
@@ -82,6 +83,7 @@ class Monster:
                 "type": "attack",
                 "attacks": attacks
               }
+              #self._actions.append(action)
             elif "usage" in original_action:
               action = {
                 "name": original_action["name"],
@@ -113,22 +115,29 @@ class Monster:
                       "dmg_dice": dmg[0].split("d")[1],
                       "dmg_bonus": dmg[1]
                   })
+              self._actions.append(action)
             
-            self._actions.append(action)
+            #self._actions.append(action)
            
     def use_action(self, action):
         if action["type"] == "attack":
-            attack_roll = (
-                random.randint(1, 20)
-                + action["attack_bonus"]
-            )
-            dmg_rolls = []
-            for source in action["sources"]:
-              dmg_rolls.append({
-                  "dmg_roll": random.randint(1, int(source["dmg_dice"])) + int(source["dmg_bonus"]),
-                  "dmg_type": source["dmg_type"]
-              })
-            return {"type": "attack", "attack_roll": attack_roll, "dmg_roll": dmg_rolls}
+            attacks = []
+            for attack in action["attacks"]:
+
+              attack_roll = (
+                  random.randint(1, 20)
+                  + attack["attack_bonus"]
+              )
+
+              dmg_rolls = []
+              for source in attack["sources"]:
+                dmg_rolls.append({
+                    "dmg_roll": random.randint(1, int(source["dmg_dice"])) + int(source["dmg_bonus"]),
+                    "dmg_type": source["dmg_type"]
+                })
+
+              attacks.append({"attack_roll": attack_roll, "dmg_roll": dmg_rolls})
+            return {"type": "attack", "attacks": attacks}
 
     def receive_action(self, action):
         if action["type"] == "attack":

@@ -29,24 +29,38 @@ class Combat:
     i = 1
     while self._monster_group._status != "dead" and self._party._status != "dead":
       for turn in self._turn_order:
-        print(f'\nTURN {i} - {turn["combatant"]._type} - {turn["combatant"]._class}')
-        print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
+        
         if turn["combatant"]._type == "player" and turn["combatant"]._status == "conscious":
+          print(f'\nTURN {i} - {turn["combatant"]._type} - {turn["combatant"]._class}')
+          print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
           player = turn["combatant"]
-          monster = random.choice(self._monsters)
+
+          monster_dead = True
+          while monster_dead:
+            monster = random.choice(self._monsters)
+            if monster._status == "conscious":
+              monster_dead = False
 
           action = player.use_action(unarmed_strike)
           print(f"ACTION: {action}", player._class, player._status)
           result = monster.receive_action(action)
-          print(f"RESULT: {result}", monster._class, monster._status)
+          print(f"RESULT: {result}", monster._name, monster._status)
 
 
         if turn["combatant"]._type == "monster" and turn["combatant"]._status == "conscious":
+          print(f'\nTURN {i} - {turn["combatant"]._type} - {turn["combatant"]._name}')
+          print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
           monster = turn["combatant"]
-          player = random.choice(self._players)
 
-          action = monster.use_action(unarmed_strike)
-          print(f"ACTION: {action}", monster._class, monster._status)
+
+          player_dead = True
+          while player_dead:
+            player = random.choice(self._players)
+            if player._status == "conscious":
+              player_dead = False
+
+          action = monster.use_action(random.choice(monster._actions))
+          print(f"ACTION: {action}", monster._name, monster._status)
           result = player.receive_action(action)
           print(f"RESULT: {result}", player._class, player._status)
 
