@@ -30,13 +30,14 @@ def __main__():
     #print(party._pcs[3]._class, party._pcs[3]._initiative)
 
 
-    monster_data = monsters_data["0.125"][0]
-    print()
+    monster_data1 = monsters_data["0.125"][0]
+    monster_data2 = monsters_data["0.125"][1]
 
-    monster = Monster(monster_data)
-    print(monster._actions)
-    monster._type = "monster"
-    monsterGroup = MonsterGroup([monster])
+    monster1 = Monster(monster_data1)
+    monster2 = Monster(monster_data2)
+
+    #monster1._type = "monster"
+    monsterGroup = MonsterGroup([monster1, monster2])
 
     combat = Combat(party, monsterGroup)
 

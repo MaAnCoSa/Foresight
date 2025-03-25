@@ -41,6 +41,7 @@ class Combat:
             if monster._status == "conscious":
               monster_dead = False
 
+          # TODO: Faltan acciones y sus ponderaciones para cada clase.
           action = player.use_action(unarmed_strike)
           print(f"ACTION: {action}", player._class, player._status)
           result = monster.receive_action(action)
@@ -52,13 +53,13 @@ class Combat:
           print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
           monster = turn["combatant"]
 
-
           player_dead = True
           while player_dead:
             player = random.choice(self._players)
             if player._status == "conscious":
               player_dead = False
 
+          # TODO: Falta ponderar acciones.
           action = monster.use_action(random.choice(monster._actions))
           print(f"ACTION: {action}", monster._name, monster._status)
           result = player.receive_action(action)
