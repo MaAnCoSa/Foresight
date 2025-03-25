@@ -1,12 +1,16 @@
 fighter_str_actions = {
-  "unarmed_strike": {
-    "type": "attack",
-    "attack_stat": "STR",
-    "dmg_roll": 1
-  },
-  "Longsword": {
-      "type": "attack",
-      "attack_stat": "STR",
-      "dmg_roll": 10
-  }
+    1: [
+        {
+          "name": "unarmed_strike",
+          "type": "attack#physical",
+          "attack_stat": "STR",
+          "dmg_roll": 1
+        },
+        {
+          "name": "Longsword",
+          "type": "attack#physical",
+          "attack_stat": "STR",
+          "dmg_roll": 10
+        }
+    ]
 }

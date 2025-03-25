@@ -15,7 +15,6 @@ from clases import (
 )
 import math
 
-
 class PC:
     def __init__(self):
         self._type = "player"
@@ -30,17 +29,17 @@ class PC:
         cha_class = random.choice(
             [
                 "BARD",
-                "BARBARIAN",
-                "CLERIC",
-                "DRUID",
-                "FIGHTER_STR",
-                "FIGHTER_DEX",
-                "MONK",
-                "PALADIN",
-                "RANGER",
-                "ROGUE",
-                "SORCERER",
-                "WIZARD",
+                # "BARBARIAN",
+                # "CLERIC",
+                # "DRUID",
+                # "FIGHTER_STR",
+                # "FIGHTER_DEX",
+                # "MONK",
+                # "PALADIN",
+                # "RANGER",
+                # "ROGUE",
+                # "SORCERER",
+                # "WIZARD",
             ]
         )
         if cha_class == "BARD":
@@ -84,24 +83,57 @@ class PC:
         
         if self._class._name == "Barbarian":
             self._ac += self._modifiers["CON"] # Unarmored Defense
+        if self._class._name == "Bard":
+            self._ac += 1 # Leather armor
+            self._spell_dc = 8 + self._prof_bonus + self._modifiers["CHA"]
+            self._spell_attack_bonus = self._prof_bonus + self._modifiers["CHA"]
 
 
-    def use_action(self, action):
-        if action["type"] == "attack":
+    def use_action(self):
+        action_weights = []
+        for action in self._class._actions[self._level]:
+            action_type = action["type"].split("#")
+
+            if action_type[0] in ["attack", "dc"]:
+                action_weights.append(math.exp(action["dmg_roll"]))
+                
+
+        total = sum(action_weights)
+        action_weights_norm = []
+        for weight in action_weights:
+            action_weights_norm.append(weight / total)
+
+        action = random.choices(population=self._class._actions[self._level], weights=action_weights_norm)[0]
+
+        action_type = action["type"].split("#")
+
+        if action_type[0] == "attack":
+            attack_stat = action["attack_stat"]
+            if attack_stat == "Finesse":
+                if self._modifiers["STR"] > self._modifiers["DEX"]:
+                    attack_stat = "STR"
+                else:
+                    attack_stat = "DEX"
+
             attack_roll = (
                 random.randint(1, 20)
-                + self._modifiers[action["attack_stat"]]
+                + self._modifiers[attack_stat]
                 + self._prof_bonus
             )
             dmg_roll = (
                 random.randint(1, action["dmg_roll"])
-                + self._modifiers[action["attack_stat"]]
+                + self._modifiers[attack_stat]
             )
             
             if self._class._name == "Barbarian":
                 dmg_roll += self._class._rage_bonus[self._level]
             
             return {"type": "attack", "attack_roll": attack_roll, "dmg_roll": dmg_roll}
+        
+        elif action_type[0] == "dc":
+            dmg_roll = random.randint(1, action["dmg_roll"])
+
+            return {"type": "dc", "st": action["st"], "dc": self._spell_dc, "half": action["half"], "dmg_roll": dmg_roll}
 
     def receive_action(self, action):
         if action["type"] == "attack":
@@ -139,13 +171,19 @@ class PC:
     def check_status(self):
         if self._hp <= 0 and self._status == "conscious":
             self._status = "death_saves"
-        elif self._hp <= 0 and self.status == "death_saves":
-            death_save = random.int(1, 20)
-            if death_save >= 11:
-                self._death_saves["successes"] += 1
-            else:
-                self._death_saves["failures"] += 1
+        elif self._hp <= 0 and self._status == "death_saves":
             self.check_death_saves()
+
+    def throw_death_save(self):
+        death_save = random.randint(1, 20)
+        if death_save >= 11:
+            self._death_saves["successes"] += 1
+            result = "success"
+        else:
+            self._death_saves["failures"] += 1
+            result = "failure"
+        self.check_death_saves()
+        return {"death_save": death_save, "result": result}
             
     def check_death_saves(self):
         if self._death_saves["successes"] == 3:
@@ -155,5 +193,6 @@ class PC:
             }
             self._status = "unconscious"
             self._hp = 0
+            
         if self._death_saves["failures"] == 3:
             self._status = "dead"

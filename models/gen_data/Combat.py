@@ -30,22 +30,32 @@ class Combat:
     while self._monster_group._status != "dead" and self._party._status != "dead":
       for turn in self._turn_order:
         
-        if turn["combatant"]._type == "player" and turn["combatant"]._status == "conscious":
-          print(f'\nTURN {i} - {turn["combatant"]._type} - {turn["combatant"]._class}')
-          print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
+        if turn["combatant"]._type == "player":
           player = turn["combatant"]
 
-          monster_dead = True
-          while monster_dead:
-            monster = random.choice(self._monsters)
-            if monster._status == "conscious":
-              monster_dead = False
+          if player._status == "conscious":
+            print(f'\nTURN {i} - {player._type} - {player._class}')
+            print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
 
-          # TODO: Faltan acciones y sus ponderaciones para cada clase.
-          action = player.use_action(unarmed_strike)
-          print(f"ACTION: {action}", player._class, player._status)
-          result = monster.receive_action(action)
-          print(f"RESULT: {result}", monster._name, monster._status)
+            monster_dead = True
+            while monster_dead:
+              monster = random.choice(self._monsters)
+              if monster._status == "conscious":
+                monster_dead = False
+
+            # TODO: Faltan acciones y sus ponderaciones para cada clase.
+            action = player.use_action()
+            print(f"ACTION: {action}", player._class, player._status)
+            result = monster.receive_action(action)
+            print(f"RESULT: {result}", monster._name, monster._status)
+
+          elif player._status == "death_saves":
+            print(f'\nTURN {i} - {player._type} - {player._class}')
+            print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
+            player.check_status()
+            print(f"DEATH SAVE - Current count: {player._death_saves}")
+
+
 
 
         if turn["combatant"]._type == "monster" and turn["combatant"]._status == "conscious":

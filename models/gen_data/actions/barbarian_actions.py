@@ -1,14 +1,16 @@
 barbarian_actions = {
-    1: {
-        "greataxe": {
-            "type": "attack",
+    1: [
+        {
+            "name": "greataxe",
+            "type": "attack#physical",
             "attack_stat": "STR",
             "dmg_roll": 12
         },
-        "handaxe": {
-            "type": "attack",
+        {
+            "name": "handaxe",
+            "type": "attack#physical",
             "attack_stat": "STR",
             "dmg_roll": 6
         }
-    }
+    ]
 }

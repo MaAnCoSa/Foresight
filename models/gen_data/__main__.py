@@ -22,12 +22,12 @@ def __main__():
     #     print(pc.use_action(longsword_action))
 
     
-    party = Party([PC(), PC(), PC(), PC()])
+    party = Party([PC(), PC()])#, PC(), PC()])
 
     print(party._pcs[0]._class, party._pcs[0]._initiative)
     print(party._pcs[1]._class, party._pcs[1]._initiative)
-    print(party._pcs[2]._class, party._pcs[2]._initiative)
-    print(party._pcs[3]._class, party._pcs[3]._initiative)
+    #print(party._pcs[2]._class, party._pcs[2]._initiative)
+    #print(party._pcs[3]._class, party._pcs[3]._initiative)
 
 
     monster_data1 = monsters_data["0.125"][0]

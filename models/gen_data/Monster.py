@@ -49,19 +49,19 @@ class Monster:
         self._actions = []
         multiattack_actions = []
         for original_action in monster_data["actions"]:
-          print("OG Action:\t" + str(original_action))
+          #print("OG Action:\t" + str(original_action))
           if original_action["name"] not in multiattack_actions:
             if original_action["name"] == "Multiattack":
-              print("MULTIATTACK")
+              #print("MULTIATTACK")
 
               attacks = []
               for multi_act in original_action["actions"]:
-                print("Multi act: " + str(multi_act))
+                #print("Multi act: " + str(multi_act))
 
                 for act in monster_data["actions"]:
-                  print("\t" + str(act))
+                  #print("\t" + str(act))
                   if act["name"] == multi_act["action_name"] and act["name"] != "Multiattack" and multi_act["type"] != "ability":
-                    print("FOUND:\t" + str(act))
+                    #print("FOUND:\t" + str(act))
 
                     for count in range(multi_act["count"]):
                       attack = {
@@ -140,7 +140,8 @@ class Monster:
             return {"type": "attack", "attacks": attacks}
 
     def receive_action(self, action):
-        if action["type"] == "attack":
+        action_type = action["type"].split("#")
+        if action_type[0] == "attack":
             if action["attack_roll"] >= self._ac:
                 if self._status == "death_saves":
                     self._death_saves["failures"] += 2
@@ -164,25 +165,30 @@ class Monster:
                     "max_HP": self._hp_max,
                     "HP": self._hp,
                 }
+            
+        elif action_type[0] == "dc":
+          st_roll = random.randint(1, 20) + self._modifiers[action["st"]]
+          if st_roll < action["dc"]:
+            self._hp -= action["dmg_roll"]
+            st_result = "failed"
+          elif action["half"] == True:
+            self._hp -= math.floor(action["dmg_roll"] / 2)
+            st_result = "succeed"
+          else:
+            st_result = "succeed"
 
+          return {
+                    "type": "dc",
+                    "status": st_result,
+                    "half": action["half"],
+                    "st": action["st"],
+                    "st_roll": st_roll,
+                    "dmg": action["dmg_roll"],
+                    "max_HP": self._hp_max,
+                    "HP": self._hp,
+                  }
+               
     def check_status(self):
         if self._hp <= 0 and self._status == "conscious":
-            self._status = "death_saves"
-        elif self._hp <= 0 and self.status == "death_saves":
-            death_save = random.int(1, 20)
-            if death_save >= 11:
-                self._death_saves["successes"] += 1
-            else:
-                self._death_saves["failures"] += 1
-            self.check_death_saves()
-            
-    def check_death_saves(self):
-        if self._death_saves["successes"] == 3:
-            self._death_saves = {
-                "successes": 0,
-                "failures": 0
-            }
-            self._status = "unconscious"
-            self._hp = 0
-        if self._death_saves["failures"] == 3:
             self._status = "dead"
+            

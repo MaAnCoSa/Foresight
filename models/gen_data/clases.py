@@ -1,5 +1,6 @@
 from actions.fighter_str_actions import fighter_str_actions
 from actions.barbarian_actions import barbarian_actions
+from actions.bard_actions import bard_actions
 import random
 
 class Bard():
@@ -10,6 +11,8 @@ class Bard():
     random.shuffle(aux_stats)
     self._priority_stats = ["CHA"] + aux_stats
     self._hit_die = 8
+
+    self._actions = bard_actions
 
   def __str__(self):
     return "Bard"
@@ -60,6 +63,8 @@ class Cleric():
     self._priority_stats = ["WIS"] + aux_stats
     self._hit_die = 8
 
+    self._actions = barbarian_actions
+
   def __str__(self):
     return "Cleric"
 
@@ -72,6 +77,8 @@ class Druid():
     self._priority_stats = ["WIS"] + aux_stats
     self._hit_die = 8
 
+    self._actions = barbarian_actions
+
   def __str__(self):
     return "Druid"
 
@@ -83,6 +90,7 @@ class FighterStr():
     random.shuffle(aux_stats)
     self._priority_stats = ["STR", "CON"] + aux_stats
     self._hit_die = 10
+
     self._actions = fighter_str_actions
 
   def __str__(self):
@@ -97,6 +105,8 @@ class FighterDex():
     self._priority_stats = ["DEX", "CON"] + aux_stats
     self._hit_die = 10
 
+    self._actions = barbarian_actions
+
   def __str__(self):
     return "Fighter (DEX)"
 
@@ -109,6 +119,8 @@ class Monk():
     self._priority_stats = ["DEX", "WIS"] + aux_stats
     self._hit_die = 8
 
+    self._actions = barbarian_actions
+
   def __str__(self):
     return "Monk"
 
@@ -119,7 +131,9 @@ class Paladin():
     aux_stats = ["DEX", "CON", "INT", "WIS"]
     random.shuffle(aux_stats)
     self._priority_stats = ["CHA", "STR"] + aux_stats
-    self._hit_die = 8 # TODO: Checar esto bien en el libro.
+    self._hit_die = 10
+
+    self._actions = barbarian_actions
 
   def __str__(self):
     return "Paladin"
@@ -133,6 +147,8 @@ class Ranger():
     self._priority_stats = ["DEX", "WIS"] + aux_stats
     self._hit_die = 10
 
+    self._actions = barbarian_actions
+
   def __str__(self):
     return "Ranger"
 
@@ -144,6 +160,8 @@ class Rogue():
     random.shuffle(aux_stats)
     self._priority_stats = ["DEX"] + aux_stats
     self._hit_die = 8
+
+    self._actions = barbarian_actions
 
   def __str__(self):
     return "Rogue"
@@ -157,6 +175,8 @@ class Sorcerer():
     self._priority_stats = ["CHA"] + aux_stats
     self._hit_die = 6
 
+    self._actions = barbarian_actions
+
   def __str__(self):
     return "Sorcerer"
 
@@ -168,6 +188,8 @@ class Wizard():
     random.shuffle(aux_stats)
     self._priority_stats = ["INT"] + aux_stats
     self._hit_die = 6
+
+    self._actions = barbarian_actions
 
   def __str__(self):
     return "Wizard"
