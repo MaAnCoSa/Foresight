@@ -29,10 +29,10 @@ class PC:
         cha_class = random.choice(
             [
                 "BARD",
-                # "BARBARIAN",
+                "BARBARIAN",
                 # "CLERIC",
                 # "DRUID",
-                # "FIGHTER_STR",
+                "FIGHTER_STR",
                 # "FIGHTER_DEX",
                 # "MONK",
                 # "PALADIN",
@@ -94,8 +94,10 @@ class PC:
         for action in self._class._actions[self._level]:
             action_type = action["type"].split("#")
 
+            max_dmg = sum([dmg_roll["count"] * dmg_roll["dmg_roll"] for dmg_roll in action["dmg_rolls"]])
+
             if action_type[0] in ["attack", "dc"]:
-                action_weights.append(math.exp(action["dmg_roll"]))
+                action_weights.append(math.exp(max_dmg))
                 
 
         total = sum(action_weights)
@@ -120,20 +122,23 @@ class PC:
                 + self._modifiers[attack_stat]
                 + self._prof_bonus
             )
-            dmg_roll = (
-                random.randint(1, action["dmg_roll"])
-                + self._modifiers[attack_stat]
-            )
+
+            dmg_rolls = [ {"dmg": sum([random.randint(1,dmg_roll["dmg_roll"] + self._modifiers[attack_stat]) for roll in range(dmg_roll["count"])]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in action["dmg_rolls"]]
+
+            # dmg_roll = (
+            #     random.randint(1, action["dmg_roll"])
+            #     + self._modifiers[attack_stat]
+            # )
             
             if self._class._name == "Barbarian":
                 dmg_roll += self._class._rage_bonus[self._level]
             
-            return {"type": "attack", "attack_roll": attack_roll, "dmg_roll": dmg_roll}
+            return {"type": "attack", "attack_roll": attack_roll, "dmg_rolls": dmg_rolls}
         
         elif action_type[0] == "dc":
-            dmg_roll = random.randint(1, action["dmg_roll"])
+            dmg_rolls = [ {"dmg": sum([random.randint(1,dmg_roll["dmg_roll"]) for _ in range(dmg_roll["count"])]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in action["dmg_rolls"]]
 
-            return {"type": "dc", "st": action["st"], "dc": self._spell_dc, "half": action["half"], "dmg_roll": dmg_roll}
+            return {"type": "dc", "st": action["st"], "dc": self._spell_dc, "half": action["half"], "dmg_rolls": dmg_rolls}
 
     def receive_action(self, action):
         if action["type"] == "attack":

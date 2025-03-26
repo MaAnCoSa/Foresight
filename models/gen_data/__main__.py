@@ -30,7 +30,7 @@ def __main__():
     #print(party._pcs[3]._class, party._pcs[3]._initiative)
 
 
-    monster_data1 = monsters_data["0.125"][0]
+    monster_data1 = monsters_data["0.125"][15]
     #monster_data2 = monsters_data["0.125"][1]
 
     monster1 = Monster(monster_data1)

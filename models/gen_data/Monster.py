@@ -44,24 +44,29 @@ class Monster:
         self._dmg_vulnerabilities = monster_data['damage_vulnerabilities']
         self._dmg_resistances = monster_data['damage_resistances']
         self._dmg_immunities = monster_data['damage_immunities']
-        self._dmg_immunities = monster_data['condition_immunities']
+        self._condition_immunities = monster_data['condition_immunities']
+
+        print(f"DMG VULNERABILITIES: {self._dmg_vulnerabilities}")
+        print(f"DMG RESISTANCES: {self._dmg_resistances}")
+        print(f"DMG IMMUNITIES: {self._dmg_immunities}")
+        print(f"CONDITION IMMUNITIES: {self._condition_immunities}")
 
         self._actions = []
         multiattack_actions = []
         for original_action in monster_data["actions"]:
-          #print("OG Action:\t" + str(original_action))
+          print("OG Action:\t" + str(original_action))
           if original_action["name"] not in multiattack_actions:
             if original_action["name"] == "Multiattack":
-              #print("MULTIATTACK")
+              print("MULTIATTACK")
 
               attacks = []
               for multi_act in original_action["actions"]:
-                #print("Multi act: " + str(multi_act))
+                print("Multi act: " + str(multi_act))
 
                 for act in monster_data["actions"]:
-                  #print("\t" + str(act))
+                  print("\t" + str(act))
                   if act["name"] == multi_act["action_name"] and act["name"] != "Multiattack" and multi_act["type"] != "ability":
-                    #print("FOUND:\t" + str(act))
+                    print("FOUND:\t" + str(act))
 
                     for count in range(multi_act["count"]):
                       attack = {
@@ -138,6 +143,20 @@ class Monster:
 
               attacks.append({"attack_roll": attack_roll, "dmg_roll": dmg_rolls})
             return {"type": "attack", "attacks": attacks}
+        
+    def get_total_dmg(self, dmg_rolls):
+      total_dmg = 0
+      for dmg_roll in dmg_rolls:
+        if dmg_roll["dmg_type"] in self._dmg_vulnerabilities:
+          dmg = 2 * dmg_roll["dmg"]
+          total_dmg += dmg
+        elif dmg_roll["dmg_type"] in self._dmg_resistances:
+          dmg = math.floor(dmg_roll["dmg"] / 2)
+          total_dmg += dmg
+        elif dmg_roll["dmg_type"] not in self._dmg_vulnerabilities:
+          dmg = dmg_roll["dmg"]
+          total_dmg += dmg
+      return total_dmg
 
     def receive_action(self, action):
         action_type = action["type"].split("#")
@@ -146,7 +165,7 @@ class Monster:
                 if self._status == "death_saves":
                     self._death_saves["failures"] += 2
                 elif self._status == "conscious":
-                    self._hp -= action["dmg_roll"]
+                    self._hp -= self.get_total_dmg(action["dmg_rolls"])
                     self.check_status()
                     return {
                         "type": "attack",
@@ -169,10 +188,12 @@ class Monster:
         elif action_type[0] == "dc":
           st_roll = random.randint(1, 20) + self._modifiers[action["st"]]
           if st_roll < action["dc"]:
-            self._hp -= action["dmg_roll"]
+            total_dmg = self.get_total_dmg(action["dmg_rolls"])
+            self._hp -= total_dmg
             st_result = "failed"
           elif action["half"] == True:
-            self._hp -= math.floor(action["dmg_roll"] / 2)
+            total_dmg = math.floor(self.get_total_dmg(action["dmg_rolls"]) / 2)
+            self._hp -= total_dmg
             st_result = "succeed"
           else:
             st_result = "succeed"
@@ -183,7 +204,7 @@ class Monster:
                     "half": action["half"],
                     "st": action["st"],
                     "st_roll": st_roll,
-                    "dmg": action["dmg_roll"],
+                    "dmg": total_dmg,
                     "max_HP": self._hp_max,
                     "HP": self._hp,
                   }
