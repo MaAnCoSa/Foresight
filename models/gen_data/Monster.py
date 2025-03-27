@@ -75,12 +75,27 @@ class Monster:
                       }
                       for source in act['damage']:
                         if 'choose' not in source:
-                          dmg = source["damage_dice"].split("+")
+                          dmg_parts = source["damage_dice"].split("+")
+                          if len(dmg_parts) == 1:
+                             dmg_bonus = 0
+                          else:
+                             dmg_bonus = int(dmg_parts[1])
+
+                          dmg_parts = dmg_parts[0].split("d")
+                          if len(dmg_parts) == 1:
+                             count = 0
+                             dmg_dice = int(dmg_parts[0])
+                          else:
+                             count = int(dmg_parts[0])
+                             dmg_dice = int(dmg_dice[1])
+
                           attack["sources"].append({
                               "dmg_type": source["damage_type"]["name"],
-                              "dmg_dice": dmg[0].split("d")[1],
-                              "dmg_bonus": dmg[1]
+                              "dmg_dice": dmg_dice,
+                              "count": count,
+                              "dmg_bonus": dmg_bonus
                           })
+
                       multiattack_actions.append(act["name"])
                       attacks.append(attack)
               action = {
@@ -114,11 +129,25 @@ class Monster:
                 }
               for source in original_action['damage']:
                 if 'choose' not in source:
-                  dmg = source["damage_dice"].split("+")
+                  dmg_parts = source["damage_dice"].split("+")
+                  if len(dmg_parts) == 1:
+                      dmg_bonus = 0
+                  else:
+                      dmg_bonus = int(dmg_parts[1])
+
+                  dmg_parts = dmg_parts[0].split("d")
+                  if len(dmg_parts) == 1:
+                      count = 0
+                      dmg_dice = int(dmg_parts[0])
+                  else:
+                      count = int(dmg_parts[0])
+                      dmg_dice = int(dmg_dice[1])
+
                   action["attacks"][0]["sources"].append({
                       "dmg_type": source["damage_type"]["name"],
-                      "dmg_dice": dmg[0].split("d")[1],
-                      "dmg_bonus": dmg[1]
+                      "dmg_dice": dmg_dice,
+                      "count": count,
+                      "dmg_bonus": dmg_bonus
                   })
               self._actions.append(action)
             
@@ -136,15 +165,23 @@ class Monster:
 
               dmg_rolls = []
               for source in attack["sources"]:
-                dmg_rolls.append({
-                    "dmg_roll": random.randint(1, int(source["dmg_dice"])) + int(source["dmg_bonus"]),
+                if source["count"] == 0:
+                  dmg_rolls.append({
+                    "dmg_roll": source["count"] * (int(source["dmg_dice"]) + int(source["dmg_bonus"])),
                     "dmg_type": source["dmg_type"]
-                })
+                  })
+                else:
+                  dmg_rolls.append({
+                    "dmg_roll": source["count"] * (random.randint(1, int(source["dmg_dice"])) + int(source["dmg_bonus"])),
+                    "dmg_type": source["dmg_type"]
+                  })
 
               attacks.append({"attack_roll": attack_roll, "dmg_roll": dmg_rolls})
             return {"type": "attack", "attacks": attacks}
         
     def get_total_dmg(self, dmg_rolls):
+      #print("DMG ROLLS:")
+      #print(dmg_rolls)
       total_dmg = 0
       for dmg_roll in dmg_rolls:
         if dmg_roll["dmg_type"] in self._dmg_vulnerabilities:
@@ -165,18 +202,18 @@ class Monster:
                 if self._status == "death_saves":
                     self._death_saves["failures"] += 2
                 elif self._status == "conscious":
-                    self._hp -= self.get_total_dmg(action["dmg_rolls"])
-                    self.check_status()
-                    return {
+                    total_dmg = self.get_total_dmg(action["dmg_rolls"])
+                    self._hp -= total_dmg
+                    received_action = {
                         "type": "attack",
                         "status": "hit",
                         "AC": self._ac,
-                        "dmg": action["dmg_roll"],
+                        "dmg": total_dmg,
                         "max_HP": self._hp_max,
                         "HP": self._hp,
                     }
             else:
-                return {
+                received_action = {
                     "type": "attack",
                     "status": "miss",
                     "AC": self._ac,
@@ -198,7 +235,7 @@ class Monster:
           else:
             st_result = "succeed"
 
-          return {
+          received_action = {
                     "type": "dc",
                     "status": st_result,
                     "half": action["half"],
@@ -208,6 +245,8 @@ class Monster:
                     "max_HP": self._hp_max,
                     "HP": self._hp,
                   }
+        self.check_status()
+        return received_action
                
     def check_status(self):
         if self._hp <= 0 and self._status == "conscious":

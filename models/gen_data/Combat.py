@@ -27,7 +27,7 @@ class Combat:
     }
     
     i = 1
-    while self._monster_group._status != "dead" and self._party._status != "dead":
+    while self._monster_group._status == "alive" and self._party._status == "alive":
       for turn in self._turn_order:
         
         if turn["combatant"]._type == "player":

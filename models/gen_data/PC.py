@@ -130,8 +130,8 @@ class PC:
             #     + self._modifiers[attack_stat]
             # )
             
-            if self._class._name == "Barbarian":
-                dmg_roll += self._class._rage_bonus[self._level]
+            if self._class._name == "Barbarian" and action_type[1] == "physical":
+                dmg_rolls[0]["dmg"] += self._class._rage_bonus[self._level]
             
             return {"type": "attack", "attack_roll": attack_roll, "dmg_rolls": dmg_rolls}
         
