@@ -32,7 +32,7 @@ class PC:
                 "BARBARIAN",
                 # "CLERIC",
                 # "DRUID",
-                "FIGHTER_STR",
+                # "FIGHTER_STR",
                 # "FIGHTER_DEX",
                 # "MONK",
                 # "PALADIN",
@@ -44,6 +44,7 @@ class PC:
         )
         if cha_class == "BARD":
             self._class = Bard()
+            self._remaining_spell_slots = self._class._spell_slots[self._level]
         elif cha_class == "BARBARIAN":
             self._class = Barbarian()
         elif cha_class == "CLERIC":
@@ -87,18 +88,50 @@ class PC:
             self._ac += 1 # Leather armor
             self._spell_dc = 8 + self._prof_bonus + self._modifiers["CHA"]
             self._spell_attack_bonus = self._prof_bonus + self._modifiers["CHA"]
+            self._since_last_spell = 5
 
+    def set_party(self, party):
+        self._party = party
 
     def use_action(self):
         action_weights = []
+        consider_healing = False
+        i = 0
         for action in self._class._actions[self._level]:
             action_type = action["type"].split("#")
 
-            max_dmg = sum([dmg_roll["count"] * dmg_roll["dmg_roll"] for dmg_roll in action["dmg_rolls"]])
+            if action_type[1] == "spell":
+                print("SPELL SLOTS:", self._remaining_spell_slots)
+                if self._remaining_spell_slots[action["spell_level"] - 1] == 0:
+                    action_weights.append(0.0)
+                    continue
 
-            if action_type[0] in ["attack", "dc"]:
-                action_weights.append(math.exp(max_dmg))
-                
+            if action_type[0] in ["heal"]:
+                _, max_status = self._party.check_party_health()
+
+                # If someoneis below half HP, we consider healing.
+                if max_status > 1:
+                    max_heal = action["heal_dice"] + self._modifiers[action["heal_bonus"]]
+                    action_weights.append(math.pow(max_heal, 3)*max_status)
+                else:
+                    action_weights.append(0.0)
+            
+
+            elif action_type[0] in ["attack", "dc"]:
+                max_dmg = sum([dmg_roll["count"] * dmg_roll["dmg_roll"] for dmg_roll in action["dmg_rolls"]])
+                if action_type[1] == "spell":
+                    action_weights.append(math.pow(max_dmg, 2) * (self._since_last_spell/10))
+                else:
+                    action_weights.append(math.pow(max_dmg, 2))
+
+            else:
+                action_weights.append(0.0)
+
+            print("ACTION:")
+            print(action)
+            print(action_weights[i])
+
+            i += 1
 
         total = sum(action_weights)
         action_weights_norm = []
@@ -108,6 +141,12 @@ class PC:
         action = random.choices(population=self._class._actions[self._level], weights=action_weights_norm)[0]
 
         action_type = action["type"].split("#")
+
+        if action_type[1] == "spell":
+            self._since_last_spell = 1
+            self._remaining_spell_slots[action["spell_level"] - 1] -= 1
+        elif self._class in ["Bard", "cleric", "Druid", "Paladin", "Ranger", "Sorcerer"]:
+            self._since_last_spell += 1
 
         if action_type[0] == "attack":
             attack_stat = action["attack_stat"]
@@ -133,18 +172,27 @@ class PC:
             if self._class._name == "Barbarian" and action_type[1] == "physical":
                 dmg_rolls[0]["dmg"] += self._class._rage_bonus[self._level]
             
-            return {"type": "attack", "attack_roll": attack_roll, "dmg_rolls": dmg_rolls}
+            return {"name": action["name"], "type": "attack", "attack_roll": attack_roll, "dmg_rolls": dmg_rolls}
         
         elif action_type[0] == "dc":
             dmg_rolls = [ {"dmg": sum([random.randint(1,dmg_roll["dmg_roll"]) for _ in range(dmg_roll["count"])]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in action["dmg_rolls"]]
 
-            return {"type": "dc", "st": action["st"], "dc": self._spell_dc, "half": action["half"], "dmg_rolls": dmg_rolls}
+            return {"name": action["name"], "type": "dc", "st": action["st"], "dc": self._spell_dc, "half": action["half"], "dmg_rolls": dmg_rolls}
+
+        elif action_type[0] == "heal":
+            if action["heal_bonus"] != None:
+                heal_bonus = self._modifiers[action["heal_bonus"]]
+            else:
+                heal_bonus = 0
+
+            healed_hp = sum([random.randint(1,action["heal_dice"]) for _ in range(action["count"])]) + heal_bonus
+            return {"name": action["name"], "type": "heal", "healed_hp": healed_hp, "creatures": action["creatures"]}
 
     def receive_action(self, action):
         if action["type"] == "attack":
             received_attacks = []
             for attack in action["attacks"]:
-
+                
                 if attack["attack_roll"] >= self._ac:
                     if self._status == "death_saves":
                         self._death_saves["failures"] += 2
@@ -171,13 +219,34 @@ class PC:
                         "max_HP": self._hp_max,
                         "HP": self._hp,
                     })
-            return {"type": "attack", "received_attacks": received_attacks}
+            
+            return {
+                "name": action["name"],
+                "type": "attack",
+                "received_attacks": received_attacks
+            }
+
+        elif action["type"] == "heal":
+            self._hp += action["healed_hp"]
+            if self._hp > self._hp_max:
+                self._hp = self._hp_max
+            self.check_status()
+            return {
+                "name": action["name"],
+                "type": "heal",
+                "healed_hp": action["healed_hp"],
+                "max_HP": self._hp_max,
+                "HP": self._hp,
+            }
 
     def check_status(self):
         if self._hp <= 0 and self._status == "conscious":
             self._status = "death_saves"
         elif self._hp <= 0 and self._status == "death_saves":
             self.check_death_saves()
+        elif self._hp > 0 and self._status != "conscious":
+            self._status = "conscious"
+            self.reset_death_saves()
 
     def throw_death_save(self):
         death_save = random.randint(1, 20)
@@ -189,7 +258,10 @@ class PC:
             result = "failure"
         self.check_death_saves()
         return {"death_save": death_save, "result": result}
-            
+    
+    def reset_death_saves(self):
+        self._death_saves = {"successes": 0, "failures": 0}
+
     def check_death_saves(self):
         if self._death_saves["successes"] == 3:
             self._death_saves = {

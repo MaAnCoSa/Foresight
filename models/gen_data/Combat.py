@@ -30,6 +30,7 @@ class Combat:
     while self._monster_group._status == "alive" and self._party._status == "alive":
       for turn in self._turn_order:
         
+        # If it's a player's turn:
         if turn["combatant"]._type == "player":
           player = turn["combatant"]
 
@@ -46,30 +47,50 @@ class Combat:
             # TODO: Faltan acciones y sus ponderaciones para cada clase.
             action = player.use_action()
             print(f"ACTION: {action}", player._class, player._status)
-            result = monster.receive_action(action)
-            print(f"RESULT: {result}", monster._name, monster._status)
+
+            # If the action is to heal a teammate:
+            if action["type"] == "heal":
+              for teammate in self._party.heal_priority()[:action["creatures"]]:
+                result = teammate.receive_action(action)
+                print(f"RESULT: {result}", teammate._class, teammate._status)
+
+            # If the action is against a monster:
+            else:
+              result = monster.receive_action(action)
+              print(f"RESULT: {result}", monster._name, monster._status)
 
           elif player._status == "death_saves":
             print(f'\nTURN {i} - {player._type} - {player._class}')
             print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
+            player.throw_death_save()
             player.check_status()
             print(f"DEATH SAVE - Current count: {player._death_saves}")
 
 
 
-
+        # If it's a monster's turn:
         if turn["combatant"]._type == "monster" and turn["combatant"]._status == "conscious":
           print(f'\nTURN {i} - {turn["combatant"]._type} - {turn["combatant"]._name}')
           print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
           monster = turn["combatant"]
 
-          player_dead = True
-          while player_dead:
-            player = random.choice(self._players)
-            if player._status == "conscious":
-              player_dead = False
+          # Werandomize the player target:
+          target_weights = []
+          for pc in self._players:
+            if pc._status == "conscious":
+              target_weights.append(6.0)
+            elif pc._status == "death_saves":
+              target_weights.append(2.0)
+            else:
+              target_weights.append(0.0)
 
-          # TODO: Falta ponderar acciones.
+          total = sum(target_weights)
+          target_weights_norm = []
+          for weight in target_weights:
+              target_weights_norm.append(weight / total)
+
+          player = random.choices(population=self._players, weights=target_weights_norm)[0]
+
           action = monster.use_action(random.choice(monster._actions))
           print(f"ACTION: {action}", monster._name, monster._status)
           result = player.receive_action(action)

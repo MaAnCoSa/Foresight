@@ -12,6 +12,30 @@ class Bard():
     self._priority_stats = ["CHA"] + aux_stats
     self._hit_die = 8
 
+    self._spellcasting = True
+    self._spell_slots = {
+      1: [2,0,0,0,0,0,0,0,0],
+      2: [3,0,0,0,0,0,0,0,0],
+      3: [4,2,0,0,0,0,0,0,0],
+      4: [4,3,0,0,0,0,0,0,0],
+      5: [4,3,2,0,0,0,0,0,0],
+      6: [4,3,3,0,0,0,0,0,0],
+      7: [4,3,3,1,0,0,0,0,0],
+      8: [4,3,3,2,0,0,0,0,0],
+      9: [4,3,3,3,1,0,0,0,0],
+      10: [4,3,3,3,2,0,0,0,0],
+      11: [4,3,3,3,2,1,0,0,0],
+      12: [4,3,3,3,2,1,0,0,0],
+      13: [4,3,3,3,2,1,1,0,0],
+      14: [4,3,3,3,2,1,1,0,0],
+      15: [4,3,3,3,2,1,1,1,0],
+      16: [4,3,3,3,2,1,1,1,0],
+      17: [4,3,3,3,2,1,1,1,1],
+      18: [4,3,3,3,3,1,1,1,1],
+      19: [4,3,3,3,3,2,1,1,1],
+      20: [4,3,3,3,3,2,2,1,1],
+    }
+
     self._actions = bard_actions
 
   def __str__(self):
@@ -25,6 +49,8 @@ class Barbarian():
     random.shuffle(aux_stats)
     self._priority_stats = ["STR", "CON"] + aux_stats
     self._hit_die = 12
+
+    self._spellcasting = False
     
     self._rage_bonus = {
       1: 2,
@@ -63,6 +89,8 @@ class Cleric():
     self._priority_stats = ["WIS"] + aux_stats
     self._hit_die = 8
 
+    self._spellcasting = False
+
     self._actions = barbarian_actions
 
   def __str__(self):
@@ -76,6 +104,8 @@ class Druid():
     random.shuffle(aux_stats)
     self._priority_stats = ["WIS"] + aux_stats
     self._hit_die = 8
+
+    self._spellcasting = False
 
     self._actions = barbarian_actions
 
@@ -91,6 +121,8 @@ class FighterStr():
     self._priority_stats = ["STR", "CON"] + aux_stats
     self._hit_die = 10
 
+    self._spellcasting = False
+
     self._actions = fighter_str_actions
 
   def __str__(self):
@@ -104,6 +136,8 @@ class FighterDex():
     random.shuffle(aux_stats)
     self._priority_stats = ["DEX", "CON"] + aux_stats
     self._hit_die = 10
+
+    self._spellcasting = False
 
     self._actions = barbarian_actions
 
@@ -119,6 +153,8 @@ class Monk():
     self._priority_stats = ["DEX", "WIS"] + aux_stats
     self._hit_die = 8
 
+    self._spellcasting = False
+
     self._actions = barbarian_actions
 
   def __str__(self):
@@ -132,6 +168,8 @@ class Paladin():
     random.shuffle(aux_stats)
     self._priority_stats = ["CHA", "STR"] + aux_stats
     self._hit_die = 10
+
+    self._spellcasting = False
 
     self._actions = barbarian_actions
 
@@ -147,6 +185,8 @@ class Ranger():
     self._priority_stats = ["DEX", "WIS"] + aux_stats
     self._hit_die = 10
 
+    self._spellcasting = False
+
     self._actions = barbarian_actions
 
   def __str__(self):
@@ -160,6 +200,8 @@ class Rogue():
     random.shuffle(aux_stats)
     self._priority_stats = ["DEX"] + aux_stats
     self._hit_die = 8
+
+    self._spellcasting = False
 
     self._actions = barbarian_actions
 
@@ -175,6 +217,8 @@ class Sorcerer():
     self._priority_stats = ["CHA"] + aux_stats
     self._hit_die = 6
 
+    self._spellcasting = False
+
     self._actions = barbarian_actions
 
   def __str__(self):
@@ -188,6 +232,8 @@ class Wizard():
     random.shuffle(aux_stats)
     self._priority_stats = ["INT"] + aux_stats
     self._hit_die = 6
+
+    self._spellcasting = False
 
     self._actions = barbarian_actions
 

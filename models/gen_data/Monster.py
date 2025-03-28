@@ -87,7 +87,7 @@ class Monster:
                              dmg_dice = int(dmg_parts[0])
                           else:
                              count = int(dmg_parts[0])
-                             dmg_dice = int(dmg_dice[1])
+                             dmg_dice = int(dmg_parts[1])
 
                           attack["sources"].append({
                               "dmg_type": source["damage_type"]["name"],
@@ -141,7 +141,7 @@ class Monster:
                       dmg_dice = int(dmg_parts[0])
                   else:
                       count = int(dmg_parts[0])
-                      dmg_dice = int(dmg_dice[1])
+                      dmg_dice = int(dmg_parts[1])
 
                   action["attacks"][0]["sources"].append({
                       "dmg_type": source["damage_type"]["name"],
@@ -177,11 +177,9 @@ class Monster:
                   })
 
               attacks.append({"attack_roll": attack_roll, "dmg_roll": dmg_rolls})
-            return {"type": "attack", "attacks": attacks}
+            return {"name": action["name"], "type": "attack", "attacks": attacks}
         
     def get_total_dmg(self, dmg_rolls):
-      #print("DMG ROLLS:")
-      #print(dmg_rolls)
       total_dmg = 0
       for dmg_roll in dmg_rolls:
         if dmg_roll["dmg_type"] in self._dmg_vulnerabilities:
@@ -205,6 +203,7 @@ class Monster:
                     total_dmg = self.get_total_dmg(action["dmg_rolls"])
                     self._hp -= total_dmg
                     received_action = {
+                        "name": action["name"],
                         "type": "attack",
                         "status": "hit",
                         "AC": self._ac,
@@ -214,6 +213,7 @@ class Monster:
                     }
             else:
                 received_action = {
+                    "name": action["name"],
                     "type": "attack",
                     "status": "miss",
                     "AC": self._ac,
@@ -233,9 +233,11 @@ class Monster:
             self._hp -= total_dmg
             st_result = "succeed"
           else:
+            total_dmg = 0
             st_result = "succeed"
 
           received_action = {
+                    "name": action["name"],
                     "type": "dc",
                     "status": st_result,
                     "half": action["half"],

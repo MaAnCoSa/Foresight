@@ -34,5 +34,28 @@ bard_actions = {
             "half": True
             # +1d6 per extra slot lvl
         },
+        {
+            "name": "Thunderwave",
+            "type": "dc#spell",
+            "spell_level": 1,
+            "st": "CON",
+            "dmg_rolls": [{
+                "count": 2,
+                "dmg_roll": 8,
+                "dmg_type": "thunder"
+            }],
+            "half": True
+            # +1d8 per extra slot lvl
+        },
+        {
+            "name": "Cure Wounds",
+            "type": "heal#spell",
+            "spell_level": 1,
+            "count": 1,
+            "creatures": 1,
+            "heal_dice": 8,
+            "heal_bonus": "CHA"
+            # +1d8 per extra slot lvl 
+        }
     ]
 }
