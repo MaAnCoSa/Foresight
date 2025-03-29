@@ -22,23 +22,23 @@ def __main__():
     #     print(pc.use_action(longsword_action))
 
     
-    party = Party([PC(), PC()])#, PC(), PC()])
+    party = Party([PC(), PC(), PC()])#, PC()])
 
     print(party._pcs[0]._class, party._pcs[0]._initiative)
     print(party._pcs[1]._class, party._pcs[1]._initiative)
-    #print(party._pcs[2]._class, party._pcs[2]._initiative)
+    print(party._pcs[2]._class, party._pcs[2]._initiative)
     #print(party._pcs[3]._class, party._pcs[3]._initiative)
 
 
     monster_data1 = monsters_data["0.25"][6]
-    #monster_data2 = monsters_data["0.25"][1]
+    monster_data2 = monsters_data["0.25"][5]
     #monster_data3 = monsters_data["0.25"][2]
 
     monster1 = Monster(monster_data1)
-    #monster2 = Monster(monster_data2)
+    monster2 = Monster(monster_data2)
     #monster3 = Monster(monster_data3)
 
-    monsterGroup = MonsterGroup([monster1])
+    monsterGroup = MonsterGroup([monster1, monster2])
 
     combat = Combat(party, monsterGroup)
 

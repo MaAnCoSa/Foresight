@@ -3,16 +3,22 @@ bard_actions = {
         {
             "name": "rapier",
             "type": "attack#physical",
-            "attack_stat": "Finesse",
-            "dmg_rolls": [{
-                "count": 1,
-                "dmg_roll": 8,
-                "dmg_type": "piercing"
+            "target_type": "creature_amount",
+            "amount_creatures": 1,
+            "attacks": [{
+                "attack_stat": "Finesse",
+                "dmg_rolls": [{
+                    "count": 1,
+                    "dmg_roll": 8,
+                    "dmg_type": "piercing"
+                }]
             }]
         },
         {
             "name": "Vicious Mockery",
             "type": "dc#cantrip",
+            "target_type": "creature_amount",
+            "amount_creatures": 1,
             "st": "WIS",
             "dmg_rolls": [{
                 "count": 1,
@@ -24,6 +30,8 @@ bard_actions = {
         {
             "name": "Dissonant Whispers",
             "type": "dc#spell",
+            "target_type": "creature_amount",
+            "amount_creatures": 1,
             "spell_level": 1,
             "st": "WIS",
             "dmg_rolls": [{
@@ -37,6 +45,8 @@ bard_actions = {
         {
             "name": "Thunderwave",
             "type": "dc#spell",
+            "target_type": "aoe",
+            "radius": 15,
             "spell_level": 1,
             "st": "CON",
             "dmg_rolls": [{

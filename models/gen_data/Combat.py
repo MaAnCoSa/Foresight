@@ -38,13 +38,6 @@ class Combat:
             print(f'\nTURN {i} - {player._type} - {player._class}')
             print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
 
-            monster_dead = True
-            while monster_dead:
-              monster = random.choice(self._monsters)
-              if monster._status == "conscious":
-                monster_dead = False
-
-            # TODO: Faltan acciones y sus ponderaciones para cada clase.
             action = player.use_action()
             print(f"ACTION: {action}", player._class, player._status)
 
@@ -55,10 +48,31 @@ class Combat:
                 print(f"RESULT: {result}", teammate._class, teammate._status)
 
             # If the action is against a monster:
-            else:
-              result = monster.receive_action(action)
-              print(f"RESULT: {result}", monster._name, monster._status)
+            elif action["type"] in ["attack", "dc"]:
+              possible_targets = []
+              
+              for monster in self._monster_group._monsters:
+                if monster._status == "conscious":
+                  possible_targets.append(monster)
 
+              targets = []
+              if action["target_type"] == "creature_amount":
+                for i in range(action["amount_creatures"]):
+                  targets.append(random.choice(possible_targets))
+              elif action["target_type"] == "aoe":
+                i = 0
+                random.shuffle(possible_targets)
+                for possible_target in possible_targets:
+                  p = 1/(i+1) # Probability of enemy being in range.
+                  in_range = random.choices(population=[True, False], weights=[p, 1-p])
+                  if in_range == True:
+                    targets.append(possible_target)
+                  
+              for target in targets:
+                result = target.receive_action(action)
+                print(f"RESULT: {result}", monster._name, monster._status)
+
+            
           elif player._status == "death_saves":
             print(f'\nTURN {i} - {player._type} - {player._class}')
             print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")

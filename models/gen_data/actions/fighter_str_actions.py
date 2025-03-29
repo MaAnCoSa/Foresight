@@ -3,21 +3,25 @@ fighter_str_actions = {
         {
           "name": "unarmed_strike",
           "type": "attack#physical",
-          "attack_stat": "STR",
-          "dmg_rolls": [{
-              "count": 1,
-              "dmg_roll": 1,
-              "dmg_type": "bludgeoning"
+          "attacks": [{
+            "attack_stat": "STR",
+            "dmg_rolls": [{
+                "count": 1,
+                "dmg_roll": 1,
+                "dmg_type": "bludgeoning"
+            }]
           }]
         },
         {
           "name": "Longsword",
           "type": "attack#physical",
-          "attack_stat": "STR",
-          "dmg_rolls": [{
-              "count": 1,
-              "dmg_roll": 10,
-              "dmg_type": "slashing"
+          "attacks": [{
+            "attack_stat": "STR",
+            "dmg_rolls": [{
+                "count": 1,
+                "dmg_roll": 10,
+                "dmg_type": "slashing"
+            }]
           }]
         }
     ]

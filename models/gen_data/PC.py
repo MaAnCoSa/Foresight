@@ -29,7 +29,7 @@ class PC:
         cha_class = random.choice(
             [
                 "BARD",
-                "BARBARIAN",
+                # "BARBARIAN",
                 # "CLERIC",
                 # "DRUID",
                 # "FIGHTER_STR",
@@ -117,12 +117,21 @@ class PC:
                     action_weights.append(0.0)
             
 
-            elif action_type[0] in ["attack", "dc"]:
+            elif action_type[0] == "dc":
                 max_dmg = sum([dmg_roll["count"] * dmg_roll["dmg_roll"] for dmg_roll in action["dmg_rolls"]])
                 if action_type[1] == "spell":
                     action_weights.append(math.pow(max_dmg, 2) * (self._since_last_spell/10))
                 else:
                     action_weights.append(math.pow(max_dmg, 2))
+
+            elif action_type[0] == "attack":
+                max_dmg = 0
+                for attack in action["attacks"]:
+                    max_dmg += sum([dmg_roll["count"] * dmg_roll["dmg_roll"] for dmg_roll in attack["dmg_rolls"]])
+                if action_type[1] == "spell":
+                    action_weights.append(math.pow(max_dmg, 2) * (self._since_last_spell/10))
+                else:
+                    action_weights.append(math.pow(max_dmg, 2)) 
 
             else:
                 action_weights.append(0.0)
@@ -140,44 +149,75 @@ class PC:
 
         action = random.choices(population=self._class._actions[self._level], weights=action_weights_norm)[0]
 
+        print(f"CHOSEN ACTION: {action["name"]}")
+        
         action_type = action["type"].split("#")
 
         if action_type[1] == "spell":
             self._since_last_spell = 1
             self._remaining_spell_slots[action["spell_level"] - 1] -= 1
-        elif self._class in ["Bard", "cleric", "Druid", "Paladin", "Ranger", "Sorcerer"]:
-            self._since_last_spell += 1
+            if self._class in ["Bard", "cleric", "Druid", "Paladin", "Ranger", "Sorcerer"]:
+                self._since_last_spell += 1
 
         if action_type[0] == "attack":
-            attack_stat = action["attack_stat"]
-            if attack_stat == "Finesse":
-                if self._modifiers["STR"] > self._modifiers["DEX"]:
-                    attack_stat = "STR"
-                else:
-                    attack_stat = "DEX"
+            attacks = []
+            for attack in action["attacks"]:
+                attack_stat = attack["attack_stat"]
+                if attack_stat == "Finesse":
+                    if self._modifiers["STR"] > self._modifiers["DEX"]:
+                        attack_stat = "STR"
+                    else:
+                        attack_stat = "DEX"
 
-            attack_roll = (
-                random.randint(1, 20)
-                + self._modifiers[attack_stat]
-                + self._prof_bonus
-            )
+                attack_roll = (
+                    random.randint(1, 20)
+                    + self._modifiers[attack_stat]
+                    + self._prof_bonus
+                )
 
-            dmg_rolls = [ {"dmg": sum([random.randint(1,dmg_roll["dmg_roll"] + self._modifiers[attack_stat]) for roll in range(dmg_roll["count"])]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in action["dmg_rolls"]]
+                dmg_rolls = [ {"dmg": sum([random.randint(1,dmg_roll["dmg_roll"] + self._modifiers[attack_stat]) for roll in range(dmg_roll["count"])]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in attack["dmg_rolls"]]
 
-            # dmg_roll = (
-            #     random.randint(1, action["dmg_roll"])
-            #     + self._modifiers[attack_stat]
-            # )
+                # dmg_roll = (
+                #     random.randint(1, action["dmg_roll"])
+                #     + self._modifiers[attack_stat]
+                # )
+                
+                if self._class._name == "Barbarian" and action_type[1] == "physical":
+                    dmg_rolls[0]["dmg"] += self._class._rage_bonus[self._level]
             
-            if self._class._name == "Barbarian" and action_type[1] == "physical":
-                dmg_rolls[0]["dmg"] += self._class._rage_bonus[self._level]
+                attacks.append({"attack_roll": attack_roll, "dmg_rolls": dmg_rolls})
             
-            return {"name": action["name"], "type": "attack", "attack_roll": attack_roll, "dmg_rolls": dmg_rolls}
+            action_used = {
+                "name": action["name"],
+                "type": "attack",
+                "target_type": action["target_type"],
+                "attacks": attacks
+            }
+            if action["target_type"] == "creature_amount":
+                action_used["amount_creatures"] = action["amount_creatures"]
+            elif action["target_type"] == "aoe":
+                action_used["raduis"] = action["radius"]
+
+            return action_used
         
         elif action_type[0] == "dc":
             dmg_rolls = [ {"dmg": sum([random.randint(1,dmg_roll["dmg_roll"]) for _ in range(dmg_roll["count"])]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in action["dmg_rolls"]]
 
-            return {"name": action["name"], "type": "dc", "st": action["st"], "dc": self._spell_dc, "half": action["half"], "dmg_rolls": dmg_rolls}
+            action_used = {
+                "name": action["name"],
+                "type": "dc",
+                "target_type": action["target_type"],
+                "st": action["st"],
+                "dc": self._spell_dc,
+                "half": action["half"],
+                "dmg_rolls": dmg_rolls
+            }
+            if action["target_type"] == "creature_amount":
+                action_used["amount_creatures"] = action["amount_creatures"]
+            elif action["target_type"] == "aoe":
+                action_used["raduis"] = action["radius"]
+
+            return action_used
 
         elif action_type[0] == "heal":
             if action["heal_bonus"] != None:
@@ -186,7 +226,12 @@ class PC:
                 heal_bonus = 0
 
             healed_hp = sum([random.randint(1,action["heal_dice"]) for _ in range(action["count"])]) + heal_bonus
-            return {"name": action["name"], "type": "heal", "healed_hp": healed_hp, "creatures": action["creatures"]}
+            return {
+                "name": action["name"],
+                "type": "heal",
+                "healed_hp": healed_hp,
+                "creatures": action["creatures"]
+            }
 
     def receive_action(self, action):
         if action["type"] == "attack":

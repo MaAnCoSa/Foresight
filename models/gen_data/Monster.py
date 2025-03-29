@@ -103,7 +103,7 @@ class Monster:
                 "type": "attack",
                 "attacks": attacks
               }
-              #self._actions.append(action)
+              self._actions.append(action)
             elif "usage" in original_action:
               action = {
                 "name": original_action["name"],
@@ -196,31 +196,35 @@ class Monster:
     def receive_action(self, action):
         action_type = action["type"].split("#")
         if action_type[0] == "attack":
-            if action["attack_roll"] >= self._ac:
-                if self._status == "death_saves":
-                    self._death_saves["failures"] += 2
-                elif self._status == "conscious":
-                    total_dmg = self.get_total_dmg(action["dmg_rolls"])
-                    self._hp -= total_dmg
-                    received_action = {
-                        "name": action["name"],
-                        "type": "attack",
-                        "status": "hit",
-                        "AC": self._ac,
-                        "dmg": total_dmg,
-                        "max_HP": self._hp_max,
-                        "HP": self._hp,
-                    }
-            else:
-                received_action = {
-                    "name": action["name"],
-                    "type": "attack",
-                    "status": "miss",
-                    "AC": self._ac,
-                    "dmg": 0,
-                    "max_HP": self._hp_max,
-                    "HP": self._hp,
-                }
+            received_attacks = []
+            for attack in action["attacks"]:
+              if attack["attack_roll"] >= self._ac:
+                  if self._status == "death_saves":
+                      self._death_saves["failures"] += 2
+                  elif self._status == "conscious":
+                      total_dmg = self.get_total_dmg(attack["dmg_rolls"])
+                      self._hp -= total_dmg
+                      received_attacks.append({
+                          "status": "hit",
+                          "AC": self._ac,
+                          "dmg": total_dmg,
+                          "max_HP": self._hp_max,
+                          "HP": self._hp,
+                      })
+              else:
+                  received_attacks.append({
+                      "status": "miss",
+                      "AC": self._ac,
+                      "dmg": 0,
+                      "max_HP": self._hp_max,
+                      "HP": self._hp,
+                  })
+            
+            received_action = {
+                "name": action["name"],
+                "type": "attack",
+                "received_attacks": received_attacks
+            }
             
         elif action_type[0] == "dc":
           st_roll = random.randint(1, 20) + self._modifiers[action["st"]]
