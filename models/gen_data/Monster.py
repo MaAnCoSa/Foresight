@@ -100,20 +100,22 @@ class Monster:
                       attacks.append(attack)
               action = {
                 "name": original_action["name"],
-                "type": "attack",
+                "type": "attack#physical",
+                "target_type": "creature_amount",
+                "amount_creatures": 1,
                 "attacks": attacks
               }
               self._actions.append(action)
             elif "usage" in original_action:
               action = {
                 "name": original_action["name"],
-                "type": "attack",
+                "type": "attack#physical",
                 "attack_type": "usage"
               }
             elif "dc" in original_action:
               action = {
                 "name": original_action["name"],
-                "type": "dc",
+                "type": "dc#physical",
                 "dc_stat": original_action["dc"]["dc_type"]["name"],
                 "dc_value": original_action["dc"]["dc_value"]
               }
@@ -121,7 +123,7 @@ class Monster:
             else:
               action = {
                   "name": original_action["name"],
-                  "type": "attack",
+                  "type": "attack#physical",
                   "attacks": [{
                     "attack_bonus": original_action["attack_bonus"],
                     "sources": []
@@ -154,12 +156,19 @@ class Monster:
         for ability in monster_data["special_abilities"]:
 
           if "spellcasting" in ability:
-            spellcasting_info = ability["spellcasting"]
             print("HAS SPELLCASTING")
+
+            self._spellcasting = True
+            spellcasting_info = ability["spellcasting"]
+            self._since_last_spell = 5
+
             self._spellcasting_modifier = self._modifiers[spellcasting_info["ability"]["name"]]
             self._spellcasting_dc = spellcasting_info["dc"]
             if "slots" in spellcasting_info:
               self._spell_slots = spellcasting_info["slots"]
+              self._remaining_spell_slots = self._spell_slots
+            else:
+              self._spell_slots = {}
             
             # We add each spell.
             for spell in spellcasting_info["spells"]:
@@ -206,15 +215,15 @@ class Monster:
                     
                     dmg_parts = spell_dmg.split(" + ")
                     if dmg_parts[-1] == "MOD":
-                       dmg_bonus = self._spellcasting_modifier
+                       dmg_bonus = int(self._spellcasting_modifier)
                     else:
                        dmg_bonus = 0
                     dmg_roll = dmg_parts[0].split("d")
                     if "dc" in original_spell:
                       dmg_rolls = [{
-                          "count": dmg_roll[0],
-                          "dmg_dice": dmg_roll[1],
-                          "dmg_bonus": dmg_bonus,
+                          "count": int(dmg_roll[0]),
+                          "dmg_dice": int(dmg_roll[1]),
+                          "dmg_bonus": int(dmg_bonus),
                           "dmg_type": original_spell["damage"]["damage_type"]["index"]
                       }]
                       spell_action["dmg_rolls"] = dmg_rolls
@@ -222,9 +231,9 @@ class Monster:
                       attacks = [{
                         "attack_bonus": self._spellcasting_modifier,
                         "sources": [{
-                            "count": dmg_roll[0],
-                            "dmg_dice": dmg_roll[1],
-                            "dmg_bonus": dmg_bonus,
+                            "count": int(dmg_roll[0]),
+                            "dmg_dice": int(dmg_roll[1]),
+                            "dmg_bonus": int(dmg_bonus),
                             "dmg_type": original_spell["damage"]["damage_type"]["index"]
                         }]
                       }]
@@ -232,14 +241,101 @@ class Monster:
                     
 
                     self._actions.append(spell_action)
+                    if "slots" not in spellcasting_info:
+                      if str(spell_action["level"]) not in self._spell_slots:
+                        self._spell_slots[str(spell_action["level"])] = 1
+                      else:
+                        self._spell_slots[str(spell_action["level"])] += 1
+          else:
+            self._spellcasing = False
                 
         print("MONSTER ACTIONS:")
         for action in self._actions:
            print(action)
 
-    def use_action(self, action):
-        print(f"USED ACTION: {action}")
+    def use_action(self):
+        action_weights = []
+        consider_healing = False
+        i = 0
+        for action in self._actions:
+            print(action["name"])
+            action_type = action["type"].split("#")
+
+            if action_type[1] == "spell":
+                print("SPELL SLOTS:", self._remaining_spell_slots)
+                if self._remaining_spell_slots[str(action["level"])] == 0:
+                    print("No slots, weight = 0")
+                    action_weights.append(0.0)
+                    continue
+
+            # if action_type[0] in ["heal"]:
+            #     _, max_status = self._party.check_party_health()
+
+            #     # If someoneis below half HP, we consider healing.
+            #     if max_status > 1:
+            #         max_heal = action["heal_dice"] + self._modifiers[action["heal_bonus"]]
+            #         action_weights.append(math.pow(max_heal, 3)*max_status)
+            #     else:
+            #         action_weights.append(0.0)
+            
+
+            if action_type[0] == "dc":
+                print("DC action")
+                max_dmg = sum([int(dmg_roll["count"]) * int(dmg_roll["dmg_dice"]) for dmg_roll in action["dmg_rolls"]])
+                if action_type[1] == "spell":
+                    action_weights.append(math.pow(max_dmg, 2) * (self._since_last_spell/10))
+                else:
+                    action_weights.append(math.pow(max_dmg, 2))
+
+            elif action_type[0] == "attack":
+                print("attack action")
+                max_dmg = 0
+                for attack in action["attacks"]:
+                    max_dmg += sum([int(dmg_roll["count"]) * int(dmg_roll["dmg_dice"]) for dmg_roll in attack["sources"]])
+                if action_type[1] == "spell":
+                    action_weights.append(math.pow(max_dmg, 2) * (self._since_last_spell/10))
+                else:
+                    action_weights.append(math.pow(max_dmg, 2)) 
+
+            else:
+                action_weights.append(0.0)
+
+            # print("ACTION:")
+            # print(action)
+            # print(action_weights[i])
+
+            i += 1
+            print(action_weights)
+
+        print("\nMONSTER ACTIONS:")
+        for action in self._actions:
+          print(action["name"])
+
+        print("\nACTION WEIGHTS:")
+        for weight in action_weights:
+          print(weight)
+
+        for j, action in enumerate(self._actions):
+          print(action)
+          print(action_weights[j])
+
+        total = sum(action_weights)
+        action_weights_norm = []
+        for weight in action_weights:
+            action_weights_norm.append(weight / total)
+
+        action = random.choices(population=self._actions, weights=action_weights_norm)[0]
+
+        print(f"CHOSEN ACTION: {action["name"]}")
+        
         action_type = action["type"].split("#")
+
+        if action_type[1] == "spell":
+          self._since_last_spell = 0
+          self._remaining_spell_slots[str(action["level"])] -= 1
+        elif self._spellcasting == True:
+          self._since_last_spell += 1
+                
         if action_type[0] == "attack":
             attacks = []
             for attack in action["attacks"]:
@@ -257,11 +353,20 @@ class Monster:
                 })
 
               attacks.append({"attack_roll": attack_roll, "dmg_roll": dmg_rolls})
-            return {
-              "name": action["name"],
-              "type": "attack",
-              "attacks": attacks
+            
+            action_used = {
+                "name": action["name"],
+                "type": "attack",
+                "target_type": action["target_type"],
+                "attacks": attacks
             }
+            if action["target_type"] == "creature_amount":
+                action_used["amount_creatures"] = action["amount_creatures"]
+            elif action["target_type"] == "aoe":
+                action_used["raduis"] = action["radius"]
+            
+            
+            return action_used
         
         elif action_type[0] == "dc":
             dmg_rolls = [ {"dmg": sum([random.randint(1, int(dmg_roll["dmg_dice"])) for _ in range(int(dmg_roll["count"]))]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in action["dmg_rolls"]]
@@ -291,7 +396,7 @@ class Monster:
         elif dmg_roll["dmg_type"] in self._dmg_resistances:
           dmg = math.floor(dmg_roll["dmg"] / 2)
           total_dmg += dmg
-        elif dmg_roll["dmg_type"] not in self._dmg_vulnerabilities:
+        else:
           dmg = dmg_roll["dmg"]
           total_dmg += dmg
       return total_dmg

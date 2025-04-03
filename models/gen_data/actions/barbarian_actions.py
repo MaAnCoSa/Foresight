@@ -3,6 +3,8 @@ barbarian_actions = {
         {
             "name": "greataxe",
             "type": "attack#physical",
+            "target_type": "creature_amount",
+            "amount_creatures": 1,
             "attacks": [{
                 "attack_stat": "STR",
                 "dmg_rolls": [{
@@ -15,6 +17,8 @@ barbarian_actions = {
         {
             "name": "handaxe",
             "type": "attack#physical",
+            "target_type": "creature_amount",
+            "amount_creatures": 1,
             "attacks": [{
                 "attack_stat": "STR",
                 "dmg_rolls": [{

@@ -29,10 +29,10 @@ class PC:
         cha_class = random.choice(
             [
                 "BARD",
-                # "BARBARIAN",
+                "BARBARIAN",
                 # "CLERIC",
                 # "DRUID",
-                # "FIGHTER_STR",
+                "FIGHTER_STR",
                 # "FIGHTER_DEX",
                 # "MONK",
                 # "PALADIN",
@@ -78,6 +78,9 @@ class PC:
             stat = self._class._priority_stats[i]
             self._stats[stat] = scores[i]
             self._modifiers[stat] = math.floor((self._stats[stat] - 10) / 2)
+
+        self._dmg_vulnerabilities = []
+        self._dmg_resistances = []
 
         self._death_saves = {"successes": 0, "failures": 0}
         
@@ -154,10 +157,10 @@ class PC:
         action_type = action["type"].split("#")
 
         if action_type[1] == "spell":
-            self._since_last_spell = 1
+            self._since_last_spell = 0
             self._remaining_spell_slots[action["spell_level"] - 1] -= 1
-            if self._class in ["Bard", "cleric", "Druid", "Paladin", "Ranger", "Sorcerer"]:
-                self._since_last_spell += 1
+        elif self._class in ["Bard", "cleric", "Druid", "Paladin", "Ranger", "Sorcerer"]:
+            self._since_last_spell += 1
 
         if action_type[0] == "attack":
             attacks = []
@@ -232,6 +235,20 @@ class PC:
                 "healed_hp": healed_hp,
                 "creatures": action["creatures"]
             }
+        
+    def get_total_dmg(self, dmg_rolls):
+      total_dmg = 0
+      for dmg_roll in dmg_rolls:
+        if dmg_roll["dmg_type"] in self._dmg_vulnerabilities:
+          dmg = 2 * dmg_roll["dmg"]
+          total_dmg += dmg
+        elif dmg_roll["dmg_type"] in self._dmg_resistances:
+          dmg = math.floor(dmg_roll["dmg"] / 2)
+          total_dmg += dmg
+        else:
+          dmg = dmg_roll["dmg"]
+          total_dmg += dmg
+      return total_dmg
 
     def receive_action(self, action):
         action_type = action["type"].split("#")
@@ -248,6 +265,8 @@ class PC:
                             self._hp -= int(dmg_roll["dmg_roll"])
                             dmg += int(dmg_roll["dmg_roll"])
                             self.check_status()
+                        if self._hp < self._hp_max * (-1):
+                            self._status = "dead"
                         received_attacks.append({
                             "type": "attack",
                             "status": "hit",
@@ -272,6 +291,34 @@ class PC:
                 "type": "attack",
                 "received_attacks": received_attacks
             }
+        
+        elif action_type[0] == "dc":
+            st_roll = random.randint(1, 20) + self._modifiers[action["st"]]
+            if st_roll < action["dc"]:
+                total_dmg = self.get_total_dmg(action["dmg_rolls"])
+                self._hp -= total_dmg
+                st_result = "failed"
+            elif action["half"] == True:
+                total_dmg = math.floor(self.get_total_dmg(action["dmg_rolls"]) / 2)
+                self._hp -= total_dmg
+                st_result = "succeed"
+            else:
+                total_dmg = 0
+                st_result = "succeed"
+
+            received_action = {
+                        "name": action["name"],
+                        "type": "dc",
+                        "status": st_result,
+                        "half": action["half"],
+                        "st": action["st"],
+                        "st_roll": st_roll,
+                        "dmg": total_dmg,
+                        "max_HP": self._hp_max,
+                        "HP": self._hp,
+                    }
+            self.check_status()
+            return received_action
 
         elif action_type[0] == "heal":
             self._hp += action["healed_hp"]

@@ -52,6 +52,6 @@ def __main__():
             print(turn, turn["combatant"]._type, turn["combatant"]._name)
 
 
-    combat.combat()
+    combat.combat(verbose=1)
 
 __main__()

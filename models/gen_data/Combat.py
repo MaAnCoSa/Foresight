@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 class Combat:
   
@@ -18,7 +19,7 @@ class Combat:
 
     self._turn_order.sort(key=lambda x: x["initiative"], reverse=True)
 
-  def combat(self):
+  def combat(self, verbose=0):
     # TODO: adapt it for any action, not just unarmed strike.
     unarmed_strike = {
         "type": "attack",
@@ -35,17 +36,20 @@ class Combat:
           player = turn["combatant"]
 
           if player._status == "conscious":
-            print(f'\nTURN {i} - {player._type} - {player._class}')
-            print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
+            if verbose == 1:
+              print(f'\nTURN {i} - {player._type} - {player._class}')
+              print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
 
             action = player.use_action()
-            print(f"ACTION: {action}", player._class, player._status)
+            if verbose == 1:
+              print(f"ACTION: {action}", player._class, player._status)
 
             # If the action is to heal a teammate:
             if action["type"] == "heal":
               for teammate in self._party.heal_priority()[:action["creatures"]]:
                 result = teammate.receive_action(action)
-                print(f"RESULT: {result}", teammate._class, teammate._status)
+                if verbose == 1:
+                  print(f"RESULT: {result}", teammate._class, teammate._status)
 
             # If the action is against a monster:
             elif action["type"] in ["attack", "dc"]:
@@ -58,7 +62,9 @@ class Combat:
               targets = []
               if action["target_type"] == "creature_amount":
                 for j in range(action["amount_creatures"]):
-                  targets.append(random.choice(possible_targets))
+                  choice = random.choice(possible_targets)
+                  targets.append(choice)
+                  possible_targets.remove(choice)
               elif action["target_type"] == "aoe":
                 j = 0
                 random.shuffle(possible_targets)
@@ -68,47 +74,73 @@ class Combat:
                   if in_range == True:
                     targets.append(possible_target)
                   
+                  
               for target in targets:
                 result = target.receive_action(action)
-                print(f"RESULT: {result}", monster._name, monster._status)
+                if verbose == 1:
+                  print(f"RESULT: {result}", monster._name, monster._status)
 
             
           elif player._status == "death_saves":
-            print(f'\nTURN {i} - {player._type} - {player._class}')
-            print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
+            if verbose == 1:
+              print(f'\nTURN {i} - {player._type} - {player._class}')
+              print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
             player.throw_death_save()
             player.check_status()
-            print(f"DEATH SAVE - Current count: {player._death_saves}")
+            if verbose == 1:
+              print(f"DEATH SAVE - Current count: {player._death_saves}")
 
 
 
         # If it's a monster's turn:
         if turn["combatant"]._type == "monster" and turn["combatant"]._status == "conscious":
-          print(f'\nTURN {i} - {turn["combatant"]._type} - {turn["combatant"]._name}')
-          print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
+          if verbose == 1:
+            print(f'\nTURN {i} - {turn["combatant"]._type} - {turn["combatant"]._name}')
+            print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
           monster = turn["combatant"]
+          action = monster.use_action()
+          if verbose == 1:
+            print(f"ACTION: {action}", monster._name, monster._status)
 
-          # Werandomize the player target:
+          # We randomize the player target:
+          possible_targets = []
           target_weights = []
-          for pc in self._players:
-            if pc._status == "conscious":
+              
+          for player in self._party._pcs:
+            if player._status == "conscious":
+              possible_targets.append(player)
               target_weights.append(6.0)
-            elif pc._status == "death_saves":
+            elif player._status == "death_saves":
+              possible_targets.append(player)
               target_weights.append(2.0)
-            else:
-              target_weights.append(0.0)
 
           total = sum(target_weights)
           target_weights_norm = []
           for weight in target_weights:
               target_weights_norm.append(weight / total)
 
-          player = random.choices(population=self._players, weights=target_weights_norm)[0]
+          targets = []
+          if action["target_type"] == "creature_amount":
+            targets = np.random.choice(possible_targets, action["amount_creatures"],replace=False, p=target_weights_norm)
+              
+          elif action["target_type"] == "aoe":
+            j = 0
+            random.shuffle(possible_targets)
+            for possible_target in possible_targets:
+              p = 1/(j+1) # Probability of enemy being in range.
+              in_range = random.choice([True, False], 1, p=[p, 1-p])
+              if in_range == True:
+                targets.append(possible_target)
+              
+          print(f"TARGETS: {targets}")
+          for target in targets:
+            result = target.receive_action(action)
+            if verbose == 1:
+              print(f"RESULT: {result}", monster._name, monster._status)
 
-          action = monster.use_action(random.choice(monster._actions))
-          print(f"ACTION: {action}", monster._name, monster._status)
           result = player.receive_action(action)
-          print(f"RESULT: {result}", player._class, player._status)
+          if verbose == 1:
+            print(f"RESULT: {result}", player._class, player._status)
 
         self._party.check_status()
         self._monster_group.check_status()

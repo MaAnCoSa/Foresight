@@ -1,3 +1,4 @@
 notebooks/venv
 models/gen_data/__pycache__
 models/gen_data/actions/__pycache__
+models/venv

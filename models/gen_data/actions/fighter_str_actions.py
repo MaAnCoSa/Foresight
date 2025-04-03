@@ -3,6 +3,8 @@ fighter_str_actions = {
         {
           "name": "unarmed_strike",
           "type": "attack#physical",
+          "target_type": "creature_amount",
+          "amount_creatures": 1,
           "attacks": [{
             "attack_stat": "STR",
             "dmg_rolls": [{
@@ -15,6 +17,8 @@ fighter_str_actions = {
         {
           "name": "Longsword",
           "type": "attack#physical",
+          "target_type": "creature_amount",
+          "amount_creatures": 1,
           "attacks": [{
             "attack_stat": "STR",
             "dmg_rolls": [{
