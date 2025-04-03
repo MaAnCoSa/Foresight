@@ -234,7 +234,8 @@ class PC:
             }
 
     def receive_action(self, action):
-        if action["type"] == "attack":
+        action_type = action["type"].split("#")
+        if action_type[0] == "attack":
             received_attacks = []
             for attack in action["attacks"]:
                 
@@ -244,8 +245,8 @@ class PC:
                     elif self._status == "conscious":
                         dmg = 0
                         for dmg_roll in attack["dmg_roll"]:
-                            self._hp -= dmg_roll["dmg_roll"]
-                            dmg += dmg_roll["dmg_roll"]
+                            self._hp -= int(dmg_roll["dmg_roll"])
+                            dmg += int(dmg_roll["dmg_roll"])
                             self.check_status()
                         received_attacks.append({
                             "type": "attack",
@@ -265,13 +266,14 @@ class PC:
                         "HP": self._hp,
                     })
             
+            if self._hp < 0: self._hp = 0
             return {
                 "name": action["name"],
                 "type": "attack",
                 "received_attacks": received_attacks
             }
 
-        elif action["type"] == "heal":
+        elif action_type[0] == "heal":
             self._hp += action["healed_hp"]
             if self._hp > self._hp_max:
                 self._hp = self._hp_max

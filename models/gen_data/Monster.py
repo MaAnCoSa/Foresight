@@ -2,7 +2,7 @@ import random
 import math
 
 class Monster:
-    def __init__(self, monster_data):
+    def __init__(self, monster_data, spells_data):
         self._name = monster_data["name"]
         self._type = "monster"
         self._stats = {"STR": monster_data["strength"], "DEX": monster_data["dexterity"], "CON": monster_data["constitution"], "INT": monster_data["intelligence"], "WIS": monster_data["wisdom"], "CHA": monster_data["charisma"]}
@@ -151,33 +151,136 @@ class Monster:
                   })
               self._actions.append(action)
             
-            #self._actions.append(action)
-           
+        for ability in monster_data["special_abilities"]:
+
+          if "spellcasting" in ability:
+            spellcasting_info = ability["spellcasting"]
+            print("HAS SPELLCASTING")
+            self._spellcasting_modifier = self._modifiers[spellcasting_info["ability"]["name"]]
+            self._spellcasting_dc = spellcasting_info["dc"]
+            if "slots" in spellcasting_info:
+              self._spell_slots = spellcasting_info["slots"]
+            
+            # We add each spell.
+            for spell in spellcasting_info["spells"]:
+              for original_spell in spells_data:
+                if original_spell["name"] == spell["name"]:
+                  print(original_spell["name"])
+                  if "damage" in original_spell:
+                    print("Considered spell action.")
+                    spell_action = {}
+
+                    spell_action["name"] = original_spell["name"]
+                    
+                    if "dc" in original_spell:
+                      spell_action["type"] = "dc"
+                      spell_action["st"] = original_spell["dc"]["dc_type"]["name"]
+                      if original_spell["dc"]["dc_success"] == "half":
+                        spell_action["half"] = True
+                      else:
+                        spell_action["half"] = False
+                    else:
+                      spell_action["type"] = "attack"
+
+                    if spell["level"] == 0:
+                      spell_action["type"] += "#cantrip"
+                    else:
+                      spell_action["type"] += "#spell"
+
+                    spell_action["level"] = spell["level"]
+
+                    if "area_of_effect" in original_spell:
+                      spell_action["target_type"] = "aoe"
+                      spell_action["radius"] = original_spell["area_of_effect"]["size"]
+                    else:
+                      spell_action["target_type"] = "creature_amount"
+                      spell_action["amount_creatures"] = 1 # Not always, but we can't parse the creature amount yet.
+                    
+                    if "damage_at_slot_level" in original_spell["damage"]:
+                      spell_dmg = original_spell["damage"]["damage_at_slot_level"][str(original_spell["level"])]
+                    elif "damage_at_character_level" in original_spell["damage"]:
+                      for i in list(original_spell["damage"]["damage_at_character_level"].keys()):
+                        if int(spellcasting_info["level"]) > int(i):
+                          level_to_use = i
+                      spell_dmg = original_spell["damage"]["damage_at_character_level"][level_to_use]
+                    
+                    dmg_parts = spell_dmg.split(" + ")
+                    if dmg_parts[-1] == "MOD":
+                       dmg_bonus = self._spellcasting_modifier
+                    else:
+                       dmg_bonus = 0
+                    dmg_roll = dmg_parts[0].split("d")
+                    if "dc" in original_spell:
+                      dmg_rolls = [{
+                          "count": dmg_roll[0],
+                          "dmg_dice": dmg_roll[1],
+                          "dmg_bonus": dmg_bonus,
+                          "dmg_type": original_spell["damage"]["damage_type"]["index"]
+                      }]
+                      spell_action["dmg_rolls"] = dmg_rolls
+                    else:
+                      attacks = [{
+                        "attack_bonus": self._spellcasting_modifier,
+                        "sources": [{
+                            "count": dmg_roll[0],
+                            "dmg_dice": dmg_roll[1],
+                            "dmg_bonus": dmg_bonus,
+                            "dmg_type": original_spell["damage"]["damage_type"]["index"]
+                        }]
+                      }]
+                      spell_action["attacks"] = attacks
+                    
+
+                    self._actions.append(spell_action)
+                
+        print("MONSTER ACTIONS:")
+        for action in self._actions:
+           print(action)
+
     def use_action(self, action):
-        if action["type"] == "attack":
+        print(f"USED ACTION: {action}")
+        action_type = action["type"].split("#")
+        if action_type[0] == "attack":
             attacks = []
             for attack in action["attacks"]:
 
               attack_roll = (
-                  random.randint(1, 20)
-                  + attack["attack_bonus"]
+                  random.randint(1, 20) + attack["attack_bonus"]
               )
 
               dmg_rolls = []
-              for source in attack["sources"]:
-                if source["count"] == 0:
-                  dmg_rolls.append({
-                    "dmg_roll": source["count"] * (int(source["dmg_dice"]) + int(source["dmg_bonus"])),
-                    "dmg_type": source["dmg_type"]
-                  })
-                else:
-                  dmg_rolls.append({
-                    "dmg_roll": source["count"] * (random.randint(1, int(source["dmg_dice"])) + int(source["dmg_bonus"])),
-                    "dmg_type": source["dmg_type"]
-                  })
+              for dmg_roll in attack["sources"]:
+                print(f"dmg_roll[dmg_dice]: {dmg_roll['dmg_dice']}")
+                dmg_rolls.append({
+                  "dmg_roll": dmg_roll["count"] * (random.randint(1, int(dmg_roll["dmg_dice"])) + int(dmg_roll["dmg_bonus"])),
+                  "dmg_type": dmg_roll["dmg_type"]
+                })
 
               attacks.append({"attack_roll": attack_roll, "dmg_roll": dmg_rolls})
-            return {"name": action["name"], "type": "attack", "attacks": attacks}
+            return {
+              "name": action["name"],
+              "type": "attack",
+              "attacks": attacks
+            }
+        
+        elif action_type[0] == "dc":
+            dmg_rolls = [ {"dmg": sum([random.randint(1, int(dmg_roll["dmg_dice"])) for _ in range(int(dmg_roll["count"]))]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in action["dmg_rolls"]]
+
+            action_used = {
+                "name": action["name"],
+                "type": "dc",
+                "target_type": action["target_type"],
+                "st": action["st"],
+                "dc": self._spellcasting_dc,
+                "half": action["half"],
+                "dmg_rolls": dmg_rolls
+            }
+            if action["target_type"] == "creature_amount":
+                action_used["amount_creatures"] = action["amount_creatures"]
+            elif action["target_type"] == "aoe":
+                action_used["raduis"] = action["radius"]
+
+            return action_used
         
     def get_total_dmg(self, dmg_rolls):
       total_dmg = 0

@@ -57,13 +57,13 @@ class Combat:
 
               targets = []
               if action["target_type"] == "creature_amount":
-                for i in range(action["amount_creatures"]):
+                for j in range(action["amount_creatures"]):
                   targets.append(random.choice(possible_targets))
               elif action["target_type"] == "aoe":
-                i = 0
+                j = 0
                 random.shuffle(possible_targets)
                 for possible_target in possible_targets:
-                  p = 1/(i+1) # Probability of enemy being in range.
+                  p = 1/(j+1) # Probability of enemy being in range.
                   in_range = random.choices(population=[True, False], weights=[p, 1-p])
                   if in_range == True:
                     targets.append(possible_target)

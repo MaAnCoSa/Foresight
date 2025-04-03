@@ -17,6 +17,9 @@ def __main__():
     with open("../data/raw/monsters.json", "r") as file:
         monsters_data = json.load(file)
 
+    with open("../data/raw/spells.json", "r") as file:
+        spells_data = json.load(file)
+
     # pc = PC()
     # for i in range(10):
     #     print(pc.use_action(longsword_action))
@@ -30,15 +33,15 @@ def __main__():
     #print(party._pcs[3]._class, party._pcs[3]._initiative)
 
 
-    monster_data1 = monsters_data["0.25"][6]
-    monster_data2 = monsters_data["0.25"][5]
+    monster_data1 = monsters_data["2"][8]
+    #monster_data2 = monsters_data["0.25"][6]
     #monster_data3 = monsters_data["0.25"][2]
 
-    monster1 = Monster(monster_data1)
-    monster2 = Monster(monster_data2)
-    #monster3 = Monster(monster_data3)
+    monster1 = Monster(monster_data1, spells_data)
+    #monster2 = Monster(monster_data2, spells_data)
+    #monster3 = Monster(monster_data3, spells_data)
 
-    monsterGroup = MonsterGroup([monster1, monster2])
+    monsterGroup = MonsterGroup([monster1])
 
     combat = Combat(party, monsterGroup)
 
