@@ -5,14 +5,9 @@ from MonsterGroup import MonsterGroup
 from Combat import Combat
 import json
 
-def __main__():
-    print("GEN_DATA!!!")
-
-    longsword_action = {
-      "type": "attack",
-      "attack_stat": "STR",
-      "dmg_roll": 10
-    }
+def __main__(verbose = 0):
+    if verbose >= 1:
+        print("GEN_DATA!!!\n")
 
     with open("../data/raw/monsters.json", "r") as file:
         monsters_data = json.load(file)
@@ -20,20 +15,18 @@ def __main__():
     with open("../data/raw/spells.json", "r") as file:
         spells_data = json.load(file)
 
-    # pc = PC()
-    # for i in range(10):
-    #     print(pc.use_action(longsword_action))
-
-    
     party = Party([PC(), PC(), PC()])#, PC()])
 
-    print(party._pcs[0]._class, party._pcs[0]._initiative)
-    print(party._pcs[1]._class, party._pcs[1]._initiative)
-    print(party._pcs[2]._class, party._pcs[2]._initiative)
-    #print(party._pcs[3]._class, party._pcs[3]._initiative)
+    if verbose >= 1:
+        print("Party:")
+        print("\t",party._pcs[0]._class, party._pcs[0]._initiative)
+        print("\t",party._pcs[1]._class, party._pcs[1]._initiative)
+        print("\t",party._pcs[2]._class, party._pcs[2]._initiative)
+        #print("\t",party._pcs[3]._class, party._pcs[3]._initiative)
+        print("")
 
 
-    monster_data1 = monsters_data["2"][8]
+    monster_data1 = monsters_data["4"][10]
     #monster_data2 = monsters_data["0.25"][6]
     #monster_data3 = monsters_data["0.25"][2]
 
@@ -43,15 +36,26 @@ def __main__():
 
     monsterGroup = MonsterGroup([monster1])
 
+    if verbose >= 1:
+        print("Monster Group:")
+        print("\t",monsterGroup._monsters[0]._name, monsterGroup._monsters[0]._initiative)
+        #print("\t",monsterGroup._monsters[0]._name, monsterGroup._monsters[0]._initiative)
+        #print("\t",monsterGroup._monsters[0]._name, monsterGroup._monsters[0]._initiative)
+        #print("\t",monsterGroup._monsters[0]._name, monsterGroup._monsters[0]._initiative)
+        print("")
+
     combat = Combat(party, monsterGroup)
 
-    for turn in combat._turn_order:
-        if turn["combatant"]._type == "player":
-            print(turn, turn["combatant"]._type, turn["combatant"]._class)
-        else:
-            print(turn, turn["combatant"]._type, turn["combatant"]._name)
+    if verbose >= 1:
+        print("Turns:")
+        for turn in combat._turn_order:
+            if turn["combatant"]._type == "player":
+                print("\t", turn, turn["combatant"]._type, turn["combatant"]._class)
+            else:
+                print("\t", turn, turn["combatant"]._type, turn["combatant"]._name)
+        print("")
 
 
-    combat.combat(verbose=1)
+    combat.combat(verbose)
 
-__main__()
+__main__(verbose=2)

@@ -8,7 +8,7 @@ class Party:
     def check_status(self):
         dead_count = 0
         for pc in self._pcs:
-            if pc._status in ["death_saves", "dead"]:
+            if pc._status in ["death_saves", "dead", "unconscious"]:
                 dead_count += 1
                 
         if dead_count == len(self._pcs):

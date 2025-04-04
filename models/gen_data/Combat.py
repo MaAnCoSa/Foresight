@@ -36,19 +36,19 @@ class Combat:
           player = turn["combatant"]
 
           if player._status == "conscious":
-            if verbose == 1:
+            if verbose >= 1:
               print(f'\nTURN {i} - {player._type} - {player._class}')
               print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
 
-            action = player.use_action()
-            if verbose == 1:
+            action = player.use_action(verbose)
+            if verbose >= 1:
               print(f"ACTION: {action}", player._class, player._status)
 
             # If the action is to heal a teammate:
             if action["type"] == "heal":
               for teammate in self._party.heal_priority()[:action["creatures"]]:
                 result = teammate.receive_action(action)
-                if verbose == 1:
+                if verbose >= 1:
                   print(f"RESULT: {result}", teammate._class, teammate._status)
 
             # If the action is against a monster:
@@ -77,29 +77,29 @@ class Combat:
                   
               for target in targets:
                 result = target.receive_action(action)
-                if verbose == 1:
+                if verbose >= 1:
                   print(f"RESULT: {result}", monster._name, monster._status)
-
-            
+  
           elif player._status == "death_saves":
-            if verbose == 1:
+            if verbose >= 1:
               print(f'\nTURN {i} - {player._type} - {player._class}')
               print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
             player.throw_death_save()
             player.check_status()
-            if verbose == 1:
+            if verbose >= 1:
               print(f"DEATH SAVE - Current count: {player._death_saves}")
-
+          
+          i += 1
 
 
         # If it's a monster's turn:
         if turn["combatant"]._type == "monster" and turn["combatant"]._status == "conscious":
-          if verbose == 1:
+          if verbose >= 1:
             print(f'\nTURN {i} - {turn["combatant"]._type} - {turn["combatant"]._name}')
             print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
           monster = turn["combatant"]
-          action = monster.use_action()
-          if verbose == 1:
+          action = monster.use_action(verbose)
+          if verbose >= 1:
             print(f"ACTION: {action}", monster._name, monster._status)
 
           # We randomize the player target:
@@ -132,19 +132,20 @@ class Combat:
               if in_range == True:
                 targets.append(possible_target)
               
-          print(f"TARGETS: {targets}")
+          #print(f"TARGETS: {targets}")
           for target in targets:
             result = target.receive_action(action)
-            if verbose == 1:
-              print(f"RESULT: {result}", monster._name, monster._status)
+            if verbose >= 1:
+              print(f"RESULT: {result}", target._class, target._status)
 
-          result = player.receive_action(action)
-          if verbose == 1:
-            print(f"RESULT: {result}", player._class, player._status)
+          i += 1
+
+          # result = player.receive_action(action)
+          # if verbose == 1:
+          #   print(f"RESULT: {result}", player._class, player._status)
 
         self._party.check_status()
         self._monster_group.check_status()
 
         if self._monster_group._status == "dead" or self._party._status == "dead":
           break
-        i += 1

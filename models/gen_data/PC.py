@@ -14,6 +14,7 @@ from clases import (
     Wizard,
 )
 import math
+from prettytable import PrettyTable
 
 class PC:
     def __init__(self):
@@ -68,16 +69,16 @@ class PC:
         elif cha_class == "WIZARD":
             self._class = Wizard()
             
-        self._hp_max = int(self._class._hit_die) + int(self._modifiers["CON"])
-        self._hp = self._hp_max
-        self._ac = 10 + self._modifiers["DEX"]
-        self._initiative = self._modifiers["DEX"]
-
         scores = sorted([random.randint(8, 18) for i in range(6)], reverse=True)
         for i in range(len(scores)):
             stat = self._class._priority_stats[i]
             self._stats[stat] = scores[i]
             self._modifiers[stat] = math.floor((self._stats[stat] - 10) / 2)
+
+        self._hp_max = int(self._class._hit_die) + int(self._modifiers["CON"])
+        self._hp = self._hp_max
+        self._ac = 10 + self._modifiers["DEX"]
+        self._initiative = self._modifiers["DEX"]
 
         self._dmg_vulnerabilities = []
         self._dmg_resistances = []
@@ -96,7 +97,7 @@ class PC:
     def set_party(self, party):
         self._party = party
 
-    def use_action(self):
+    def use_action(self, verbose=0):
         action_weights = []
         consider_healing = False
         i = 0
@@ -104,7 +105,7 @@ class PC:
             action_type = action["type"].split("#")
 
             if action_type[1] == "spell":
-                print("SPELL SLOTS:", self._remaining_spell_slots)
+                #print("SPELL SLOTS:", self._remaining_spell_slots)
                 if self._remaining_spell_slots[action["spell_level"] - 1] == 0:
                     action_weights.append(0.0)
                     continue
@@ -139,9 +140,9 @@ class PC:
             else:
                 action_weights.append(0.0)
 
-            print("ACTION:")
-            print(action)
-            print(action_weights[i])
+            # print("ACTION:")
+            # print(action)
+            # print(action_weights[i])
 
             i += 1
 
@@ -152,7 +153,21 @@ class PC:
 
         action = random.choices(population=self._class._actions[self._level], weights=action_weights_norm)[0]
 
-        print(f"CHOSEN ACTION: {action["name"]}")
+        if verbose >= 2:
+            print("\n\tPossible Actions:")
+            t = PrettyTable(['Action', 'Weight', 'Weight Norm'])
+
+            for i in range(len(self._class._actions[self._level])):
+                t.add_row([
+                    self._class._actions[self._level][i]["name"],
+                    action_weights[i],
+                    round(action_weights_norm[i], 2)])
+            for row in t.get_string().split("\n"):
+                print (" "*6,row)
+            print("")
+
+
+        #print(f"CHOSEN ACTION: {action["name"]}")
         
         action_type = action["type"].split("#")
 
@@ -357,7 +372,7 @@ class PC:
         self._death_saves = {"successes": 0, "failures": 0}
 
     def check_death_saves(self):
-        if self._death_saves["successes"] == 3:
+        if self._death_saves["successes"] >= 3:
             self._death_saves = {
                 "successes": 0,
                 "failures": 0
@@ -365,5 +380,5 @@ class PC:
             self._status = "unconscious"
             self._hp = 0
             
-        if self._death_saves["failures"] == 3:
+        if self._death_saves["failures"] >= 3:
             self._status = "dead"

@@ -1,6 +1,6 @@
 import random
 import math
-
+from prettytable import PrettyTable
 class Monster:
     def __init__(self, monster_data, spells_data):
         self._name = monster_data["name"]
@@ -46,31 +46,36 @@ class Monster:
         self._dmg_immunities = monster_data['damage_immunities']
         self._condition_immunities = monster_data['condition_immunities']
 
-        print(f"DMG VULNERABILITIES: {self._dmg_vulnerabilities}")
-        print(f"DMG RESISTANCES: {self._dmg_resistances}")
-        print(f"DMG IMMUNITIES: {self._dmg_immunities}")
-        print(f"CONDITION IMMUNITIES: {self._condition_immunities}")
+        #print(f"DMG VULNERABILITIES: {self._dmg_vulnerabilities}")
+        #print(f"DMG RESISTANCES: {self._dmg_resistances}")
+        #print(f"DMG IMMUNITIES: {self._dmg_immunities}")
+        #print(f"CONDITION IMMUNITIES: {self._condition_immunities}")
 
         self._actions = []
         multiattack_actions = []
         for original_action in monster_data["actions"]:
-          print("OG Action:\t" + str(original_action))
+          #print("OG Action:\t" + str(original_action))
           if original_action["name"] not in multiattack_actions:
             if original_action["name"] == "Multiattack":
-              print("MULTIATTACK")
+              #print("MULTIATTACK")
 
               attacks = []
               for multi_act in original_action["actions"]:
-                print("Multi act: " + str(multi_act))
+                #print("Multi act: " + str(multi_act))
 
                 for act in monster_data["actions"]:
-                  print("\t" + str(act))
+                  #print("\t" + str(act))
                   if act["name"] == multi_act["action_name"] and act["name"] != "Multiattack" and multi_act["type"] != "ability":
-                    print("FOUND:\t" + str(act))
+                    #print("FOUND:\t" + str(act))
 
                     for count in range(multi_act["count"]):
+                      if "attack_bonus" in act:
+                         attack_bonus = act["attack_bonus"]
+                      else:
+                         attack_bonus = 0
+
                       attack = {
-                          "attack_bonus": act["attack_bonus"],
+                          "attack_bonus": attack_bonus,
                           "sources": []
                       }
                       for source in act['damage']:
@@ -106,13 +111,15 @@ class Monster:
                 "attacks": attacks
               }
               self._actions.append(action)
-            elif "usage" in original_action:
+              #print(f"FINAL MULTIATTACK ACTION: {action}")
+
+            elif "damage" in original_action and "usage" in original_action:
               action = {
                 "name": original_action["name"],
                 "type": "attack#physical",
                 "attack_type": "usage"
               }
-            elif "dc" in original_action:
+            elif "damage" in original_action and "dc" in original_action:
               action = {
                 "name": original_action["name"],
                 "type": "dc#physical",
@@ -120,12 +127,18 @@ class Monster:
                 "dc_value": original_action["dc"]["dc_value"]
               }
 
-            else:
+            elif "damage" in original_action:
+              if "attack_bonus" in original_action:
+                  attack_bonus = original_action["attack_bonus"]
+              else:
+                  attack_bonus = 0
               action = {
                   "name": original_action["name"],
                   "type": "attack#physical",
+                  "target_type": "creature_amount",
+                  "amount_creatures": 1,
                   "attacks": [{
-                    "attack_bonus": original_action["attack_bonus"],
+                    "attack_bonus": attack_bonus,
                     "sources": []
                   }]
                 }
@@ -156,7 +169,7 @@ class Monster:
         for ability in monster_data["special_abilities"]:
 
           if "spellcasting" in ability:
-            print("HAS SPELLCASTING")
+            #print("HAS SPELLCASTING")
 
             self._spellcasting = True
             spellcasting_info = ability["spellcasting"]
@@ -174,9 +187,9 @@ class Monster:
             for spell in spellcasting_info["spells"]:
               for original_spell in spells_data:
                 if original_spell["name"] == spell["name"]:
-                  print(original_spell["name"])
+                  #print(original_spell["name"])
                   if "damage" in original_spell:
-                    print("Considered spell action.")
+                    #print("Considered spell action.")
                     spell_action = {}
 
                     spell_action["name"] = original_spell["name"]
@@ -247,40 +260,29 @@ class Monster:
                       else:
                         self._spell_slots[str(spell_action["level"])] += 1
           else:
-            self._spellcasing = False
+            self._spellcasting = False
                 
-        print("MONSTER ACTIONS:")
-        for action in self._actions:
-           print(action)
+        #print("MONSTER ACTIONS:")
+        #for action in self._actions:
+        #   print(action)
 
-    def use_action(self):
+    def use_action(self, verbose=0):
         action_weights = []
         consider_healing = False
         i = 0
         for action in self._actions:
-            print(action["name"])
+            #print(action["name"])
             action_type = action["type"].split("#")
 
             if action_type[1] == "spell":
-                print("SPELL SLOTS:", self._remaining_spell_slots)
+                #print("SPELL SLOTS:", self._remaining_spell_slots)
                 if self._remaining_spell_slots[str(action["level"])] == 0:
-                    print("No slots, weight = 0")
+                    #print("No slots, weight = 0")
                     action_weights.append(0.0)
-                    continue
-
-            # if action_type[0] in ["heal"]:
-            #     _, max_status = self._party.check_party_health()
-
-            #     # If someoneis below half HP, we consider healing.
-            #     if max_status > 1:
-            #         max_heal = action["heal_dice"] + self._modifiers[action["heal_bonus"]]
-            #         action_weights.append(math.pow(max_heal, 3)*max_status)
-            #     else:
-            #         action_weights.append(0.0)
-            
+                    continue            
 
             if action_type[0] == "dc":
-                print("DC action")
+                #print("DC action")
                 max_dmg = sum([int(dmg_roll["count"]) * int(dmg_roll["dmg_dice"]) for dmg_roll in action["dmg_rolls"]])
                 if action_type[1] == "spell":
                     action_weights.append(math.pow(max_dmg, 2) * (self._since_last_spell/10))
@@ -288,7 +290,7 @@ class Monster:
                     action_weights.append(math.pow(max_dmg, 2))
 
             elif action_type[0] == "attack":
-                print("attack action")
+                #print("attack action")
                 max_dmg = 0
                 for attack in action["attacks"]:
                     max_dmg += sum([int(dmg_roll["count"]) * int(dmg_roll["dmg_dice"]) for dmg_roll in attack["sources"]])
@@ -305,19 +307,19 @@ class Monster:
             # print(action_weights[i])
 
             i += 1
-            print(action_weights)
+            #print(action_weights)
 
-        print("\nMONSTER ACTIONS:")
-        for action in self._actions:
-          print(action["name"])
+        #print("\nMONSTER ACTIONS:")
+        #for action in self._actions:
+        #  print(action["name"])
 
-        print("\nACTION WEIGHTS:")
-        for weight in action_weights:
-          print(weight)
+        #print("\nACTION WEIGHTS:")
+        #for weight in action_weights:
+        #  print(weight)
 
-        for j, action in enumerate(self._actions):
-          print(action)
-          print(action_weights[j])
+        #for j, action in enumerate(self._actions):
+        #  print(action)
+        #  print(action_weights[j])
 
         total = sum(action_weights)
         action_weights_norm = []
@@ -326,7 +328,18 @@ class Monster:
 
         action = random.choices(population=self._actions, weights=action_weights_norm)[0]
 
-        print(f"CHOSEN ACTION: {action["name"]}")
+        if verbose >= 2:
+            print("\n\tPossible Actions:")
+            t = PrettyTable(['Action', 'Weight', 'Weight Norm'])
+
+            for i in range(len(self._actions)):
+                t.add_row([
+                    self._actions[i]["name"],
+                    action_weights[i],
+                    round(action_weights_norm[i], 2)])
+            for row in t.get_string().split("\n"):
+                print (" "*6,row)
+            print("")
         
         action_type = action["type"].split("#")
 
@@ -346,7 +359,7 @@ class Monster:
 
               dmg_rolls = []
               for dmg_roll in attack["sources"]:
-                print(f"dmg_roll[dmg_dice]: {dmg_roll['dmg_dice']}")
+                #print(f"dmg_roll[dmg_dice]: {dmg_roll['dmg_dice']}")
                 dmg_rolls.append({
                   "dmg_roll": dmg_roll["count"] * (random.randint(1, int(dmg_roll["dmg_dice"])) + int(dmg_roll["dmg_bonus"])),
                   "dmg_type": dmg_roll["dmg_type"]
