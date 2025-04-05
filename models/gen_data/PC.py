@@ -16,21 +16,44 @@ from clases import (
 import math
 from prettytable import PrettyTable
 
+proficiency_bonus = {
+    1: 2,
+    2: 2,
+    3: 2,
+    4: 2,
+    5: 3,
+    6: 3,
+    7: 3,
+    8: 3,
+    9: 4,
+    10: 4,
+    11: 4,
+    12: 4,
+    13: 5,
+    14: 5,
+    15: 5,
+    16: 5,
+    17: 6,
+    18: 6,
+    19: 6,
+    20: 6
+}
+
 class PC:
-    def __init__(self):
+    def __init__(self, level):
         self._type = "player"
-        self._level = 1
+        self._level = level
         self._stats = {"STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 0}
         self._modifiers = {"STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 0}
         
         self._status = "conscious"
         
-        self._prof_bonus = 2
+        self._prof_bonus = proficiency_bonus[self._level]
         
         cha_class = random.choice(
             [
-                "BARD",
-                "BARBARIAN",
+                # "BARD",
+                # "BARBARIAN",
                 # "CLERIC",
                 # "DRUID",
                 "FIGHTER_STR",
@@ -75,6 +98,17 @@ class PC:
             self._stats[stat] = scores[i]
             self._modifiers[stat] = math.floor((self._stats[stat] - 10) / 2)
 
+        if self._level >= 4:
+            self.ability_score_increase()
+        if self._level >= 8:
+            self.ability_score_increase()
+        if self._level >= 12:
+            self.ability_score_increase()
+        if self._level >= 16:
+            self.ability_score_increase()
+        if self._level >= 19:
+            self.ability_score_increase()
+
         self._hp_max = int(self._class._hit_die) + int(self._modifiers["CON"])
         self._hp = self._hp_max
         self._ac = 10 + self._modifiers["DEX"]
@@ -84,22 +118,56 @@ class PC:
         self._dmg_resistances = []
 
         self._death_saves = {"successes": 0, "failures": 0}
+
+        if self._level != 1:
+            self.increase_hp()
         
         
         if self._class._name == "Barbarian":
             self._ac += self._modifiers["CON"] # Unarmored Defense
+            if self._level >= 2:
+                self._class._reckless_attack = True
+            self._turns_since_last_reckless = 0
         if self._class._name == "Bard":
             self._ac += 1 # Leather armor
             self._spell_dc = 8 + self._prof_bonus + self._modifiers["CHA"]
             self._spell_attack_bonus = self._prof_bonus + self._modifiers["CHA"]
             self._since_last_spell = 5
+        if self._class._name == "FighterStr":
+            self._class._action_surges = 0
+            self._use_action_surge = False
+            self._turns_since_action_surge = 1
+            if self._level >= 2:
+                self._class._action_surges = 1
 
     def set_party(self, party):
         self._party = party
 
+    def ability_score_increase(self):
+        for increase in range(2):
+            increased = False
+            for i in range(6):
+                stat = self._class._priority_stats[i]
+                if self._stats[stat] < 20:
+                    self._stats[stat] += 2
+                    self._modifiers[stat] = math.floor((self._stats[stat] - 10) / 2)
+                    increased = True
+                if increased: break
+
+    def increase_hp(self):
+        levels_to_increase = self._level - 1
+        for i in range(levels_to_increase):
+            self._hp_max += random.randint(1, self._class._hit_die) + self._modifiers["CON"]
+            self._hp = self._hp_max
+
     def use_action(self, verbose=0):
         action_weights = []
-        consider_healing = False
+
+        # We first consider options from the different classes.
+        if self._class._name == "Barbarian":
+            p = 4/(self._turns_since_last_reckless+4) # Probability of using recless attack.
+            use_reckless = random.choices(population=[True, False], weights=[1-p, p])
+                        
         i = 0
         for action in self._class._actions[self._level]:
             action_type = action["type"].split("#")
@@ -186,9 +254,20 @@ class PC:
                         attack_stat = "STR"
                     else:
                         attack_stat = "DEX"
+                
+                if self._class._name == "Barbarian":
+                    if use_reckless == True:
+                        attack_d20 = max([random.randint(1, 20), random.randint(1, 20)])
+                        self._turns_since_last_reckless = 0
+                    else:
+                        attack_d20 = random.randint(1, 20)
+                        self._turns_since_last_reckless += 1
+                else:
+                    attack_d20 = random.randint(1, 20)
+
 
                 attack_roll = (
-                    random.randint(1, 20)
+                    attack_d20
                     + self._modifiers[attack_stat]
                     + self._prof_bonus
                 )

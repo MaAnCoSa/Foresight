@@ -15,18 +15,23 @@ def __main__(verbose = 0):
     with open("../data/raw/spells.json", "r") as file:
         spells_data = json.load(file)
 
-    party = Party([PC(), PC(), PC()])#, PC()])
+    results = []
+
+    cr = 0.5
+    amount_of_monsters = 19
+    #for i in range(amount_of_monsters):
+    party = Party([PC(2)])#, PC(2), PC(2)])#, PC(1)])
 
     if verbose >= 1:
         print("Party:")
         print("\t",party._pcs[0]._class, party._pcs[0]._initiative)
-        print("\t",party._pcs[1]._class, party._pcs[1]._initiative)
-        print("\t",party._pcs[2]._class, party._pcs[2]._initiative)
+        #print("\t",party._pcs[1]._class, party._pcs[1]._initiative)
+        #print("\t",party._pcs[2]._class, party._pcs[2]._initiative)
         #print("\t",party._pcs[3]._class, party._pcs[3]._initiative)
         print("")
 
 
-    monster_data1 = monsters_data["4"][10]
+    monster_data1 = monsters_data[str(cr)][8]
     #monster_data2 = monsters_data["0.25"][6]
     #monster_data3 = monsters_data["0.25"][2]
 
@@ -55,7 +60,36 @@ def __main__(verbose = 0):
                 print("\t", turn, turn["combatant"]._type, turn["combatant"]._name)
         print("")
 
-
     combat.combat(verbose)
+
+    classes = []
+    statuses = []
+    hps = []
+    for pc in party._pcs:
+        classes.append(pc._class)
+        statuses.append(pc._status)
+        hps.append(pc._hp)
+
+    names = []
+    mon_statuses = []
+    mon_hp = []
+    for monster in monsterGroup._monsters:
+        names.append(monster._name)
+        mon_statuses.append(monster._status)
+        mon_hp.append(monster._hp)
+
+    # results.append({
+    #     "combat": i+1,
+    #     "party": classes,
+    #     "party_status": statuses,
+    #     "party_hp": hps,
+    #     "monster_group": names,
+    #     "monster_status": mon_statuses,
+    #     "monster_hp": mon_hp
+    # })
+    
+    # print("\nCOMBATS:")
+    # for result in results:
+    #     print(result)
 
 __main__(verbose=2)

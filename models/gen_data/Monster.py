@@ -20,6 +20,7 @@ class Monster:
         self._ac = monster_data["armor_class"][0]["value"]
         self._initiative = self._modifiers["DEX"]
         self._status = "conscious"
+        self._spellcasting = False
 
         self._death_saves = {"successes": 0, "failures": 0}
 
@@ -54,7 +55,7 @@ class Monster:
         self._actions = []
         multiattack_actions = []
         for original_action in monster_data["actions"]:
-          #print("OG Action:\t" + str(original_action))
+          print("OG Action:\t" + str(original_action))
           if original_action["name"] not in multiattack_actions:
             if original_action["name"] == "Multiattack":
               #print("MULTIATTACK")
@@ -68,7 +69,15 @@ class Monster:
                   if act["name"] == multi_act["action_name"] and act["name"] != "Multiattack" and multi_act["type"] != "ability":
                     #print("FOUND:\t" + str(act))
 
-                    for count in range(multi_act["count"]):
+                    count_parts = str(multi_act["count"]).split("d")
+                    if len(count_parts) == 1:
+                      attack_count = int(count_parts[0])
+                    else:
+                      attack_count = 0
+                      for attk in count_parts[0]:
+                        attack_count += random.randint(1, int(count_parts[1]))
+
+                    for count in range(attack_count):
                       if "attack_bonus" in act:
                          attack_bonus = act["attack_bonus"]
                       else:
@@ -132,18 +141,42 @@ class Monster:
                   attack_bonus = original_action["attack_bonus"]
               else:
                   attack_bonus = 0
-              action = {
-                  "name": original_action["name"],
-                  "type": "attack#physical",
-                  "target_type": "creature_amount",
-                  "amount_creatures": 1,
-                  "attacks": [{
-                    "attack_bonus": attack_bonus,
-                    "sources": []
-                  }]
-                }
+              
               for source in original_action['damage']:
-                if 'choose' not in source:
+                if "choose" in source:
+                  for option in source["from"]["options"]:
+                    dmg_parts = option["damage_dice"].split("+")
+                    if len(dmg_parts) == 1:
+                        dmg_bonus = 0
+                    else:
+                        dmg_bonus = int(dmg_parts[1])
+
+                    dmg_parts = dmg_parts[0].split("d")
+                    if len(dmg_parts) == 1:
+                        count = 0
+                        dmg_dice = int(dmg_parts[0])
+                    else:
+                        count = int(dmg_parts[0])
+                        dmg_dice = int(dmg_parts[1])
+
+                    action = {
+                      "name": original_action["name"] + " " + option["notes"],
+                      "type": "attack#physical",
+                      "target_type": "creature_amount",
+                      "amount_creatures": 1,
+                      "attacks": [{
+                        "attack_bonus": attack_bonus,
+                        "sources": [{
+                          "dmg_type": option["damage_type"]["name"],
+                          "dmg_dice": dmg_dice,
+                          "count": count,
+                          "dmg_bonus": dmg_bonus
+                        }]
+                      }]
+                    }
+                    self._actions.append(action)
+
+                else:
                   dmg_parts = source["damage_dice"].split("+")
                   if len(dmg_parts) == 1:
                       dmg_bonus = 0
@@ -153,10 +186,22 @@ class Monster:
                   dmg_parts = dmg_parts[0].split("d")
                   if len(dmg_parts) == 1:
                       count = 0
-                      dmg_dice = int(dmg_parts[0])
+                      dmg_dice = int(1)
+                      dmg_bonus += int(dmg_parts[0])
                   else:
                       count = int(dmg_parts[0])
                       dmg_dice = int(dmg_parts[1])
+
+                  action = {
+                      "name": original_action["name"],
+                      "type": "attack#physical",
+                      "target_type": "creature_amount",
+                      "amount_creatures": 1,
+                      "attacks": [{
+                        "attack_bonus": attack_bonus,
+                        "sources": []
+                      }]
+                    }
 
                   action["attacks"][0]["sources"].append({
                       "dmg_type": source["damage_type"]["name"],
@@ -164,7 +209,8 @@ class Monster:
                       "count": count,
                       "dmg_bonus": dmg_bonus
                   })
-              self._actions.append(action)
+                
+                  self._actions.append(action)
             
         for ability in monster_data["special_abilities"]:
 
@@ -174,6 +220,11 @@ class Monster:
             self._spellcasting = True
             spellcasting_info = ability["spellcasting"]
             self._since_last_spell = 5
+
+            if "level" in spellcasting_info:
+              self._spellcasting_level = spellcasting_info["level"]
+            else:
+              self._spellcasting_level = 0
 
             self._spellcasting_modifier = self._modifiers[spellcasting_info["ability"]["name"]]
             self._spellcasting_dc = spellcasting_info["dc"]
@@ -221,8 +272,13 @@ class Monster:
                     if "damage_at_slot_level" in original_spell["damage"]:
                       spell_dmg = original_spell["damage"]["damage_at_slot_level"][str(original_spell["level"])]
                     elif "damage_at_character_level" in original_spell["damage"]:
+                      
                       for i in list(original_spell["damage"]["damage_at_character_level"].keys()):
-                        if int(spellcasting_info["level"]) > int(i):
+                        if self._spellcasting_level == 0:
+                          level_to_consider = spell["level"]
+                        else:
+                          level_to_consider = self._spellcasting_level
+                        if level_to_consider >= int(i):
                           level_to_use = i
                       spell_dmg = original_spell["damage"]["damage_at_character_level"][level_to_use]
                     
@@ -271,7 +327,7 @@ class Monster:
         consider_healing = False
         i = 0
         for action in self._actions:
-            #print(action["name"])
+            print(action)
             action_type = action["type"].split("#")
 
             if action_type[1] == "spell":
@@ -293,7 +349,7 @@ class Monster:
                 #print("attack action")
                 max_dmg = 0
                 for attack in action["attacks"]:
-                    max_dmg += sum([int(dmg_roll["count"]) * int(dmg_roll["dmg_dice"]) for dmg_roll in attack["sources"]])
+                    max_dmg += sum([int((dmg_roll["count"]) * int(dmg_roll["dmg_dice"]) + int(dmg_roll["dmg_bonus"])) for dmg_roll in attack["sources"]])
                 if action_type[1] == "spell":
                     action_weights.append(math.pow(max_dmg, 2) * (self._since_last_spell/10))
                 else:
@@ -359,7 +415,6 @@ class Monster:
 
               dmg_rolls = []
               for dmg_roll in attack["sources"]:
-                #print(f"dmg_roll[dmg_dice]: {dmg_roll['dmg_dice']}")
                 dmg_rolls.append({
                   "dmg_roll": dmg_roll["count"] * (random.randint(1, int(dmg_roll["dmg_dice"])) + int(dmg_roll["dmg_bonus"])),
                   "dmg_type": dmg_roll["dmg_type"]

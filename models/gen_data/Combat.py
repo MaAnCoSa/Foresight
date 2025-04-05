@@ -40,45 +40,67 @@ class Combat:
               print(f'\nTURN {i} - {player._type} - {player._class}')
               print(f"Party: {self._party._status} - Monster Group: {self._monster_group._status}")
 
-            action = player.use_action(verbose)
-            if verbose >= 1:
-              print(f"ACTION: {action}", player._class, player._status)
+            num_actions = 1
+            if player._class._name == "FighterStr":
+              if player._class._action_surges > 0:
+                p = 2/(player._turns_since_action_surge+3)
+                print(f"Prob of using Action Surge: {1-p}")
+                player._use_action_surge = random.choices(population=[True, False], weights=[1-p, p])[0]
+                print(f"USE ACTION SURGE: {player._use_action_surge}")
 
-            # If the action is to heal a teammate:
-            if action["type"] == "heal":
-              for teammate in self._party.heal_priority()[:action["creatures"]]:
-                result = teammate.receive_action(action)
-                if verbose >= 1:
-                  print(f"RESULT: {result}", teammate._class, teammate._status)
+              print(player._use_action_surge)
+              if player._use_action_surge == True:
+                print("use_action_surge is True")
+                num_actions += 1
+                player._use_action_surge = False
+                player._class._action_surges -= 1
+                player._turns_since_action_surge = 0
+              else:
+                player._turns_since_action_surge += 1
 
-            # If the action is against a monster:
-            elif action["type"] in ["attack", "dc"]:
-              possible_targets = []
-              
-              for monster in self._monster_group._monsters:
-                if monster._status == "conscious":
-                  possible_targets.append(monster)
+            
+            print(f"NUM ACTIONS: {num_actions}")
+            for _ in range(num_actions):
+              action = player.use_action(verbose)
+              if verbose >= 1:
+                print(f"ACTION: {action}", player._class, player._status)
 
-              targets = []
-              if action["target_type"] == "creature_amount":
-                for j in range(action["amount_creatures"]):
-                  choice = random.choice(possible_targets)
-                  targets.append(choice)
-                  possible_targets.remove(choice)
-              elif action["target_type"] == "aoe":
-                j = 0
-                random.shuffle(possible_targets)
-                for possible_target in possible_targets:
-                  p = 1/(j+1) # Probability of enemy being in range.
-                  in_range = random.choices(population=[True, False], weights=[p, 1-p])
-                  if in_range == True:
-                    targets.append(possible_target)
-                  
-                  
-              for target in targets:
-                result = target.receive_action(action)
-                if verbose >= 1:
-                  print(f"RESULT: {result}", monster._name, monster._status)
+
+              # If the action is to heal a teammate:
+              if action["type"] == "heal":
+                for teammate in self._party.heal_priority()[:action["creatures"]]:
+                  result = teammate.receive_action(action)
+                  if verbose >= 1:
+                    print(f"RESULT: {result}", teammate._class, teammate._status)
+
+              # If the action is against a monster:
+              elif action["type"] in ["attack", "dc"]:
+                possible_targets = []
+                
+                for monster in self._monster_group._monsters:
+                  if monster._status == "conscious":
+                    possible_targets.append(monster)
+
+                targets = []
+                if action["target_type"] == "creature_amount":
+                  for j in range(action["amount_creatures"]):
+                    choice = random.choice(possible_targets)
+                    targets.append(choice)
+                    possible_targets.remove(choice)
+                elif action["target_type"] == "aoe":
+                  j = 0
+                  random.shuffle(possible_targets)
+                  for possible_target in possible_targets:
+                    p = 1/(j+1) # Probability of enemy being in range.
+                    in_range = random.choices(population=[True, False], weights=[p, 1-p])
+                    if in_range == True:
+                      targets.append(possible_target)
+                    
+                    
+                for target in targets:
+                  result = target.receive_action(action)
+                  if verbose >= 1:
+                    print(f"RESULT: {result}", monster._name, monster._status)
   
           elif player._status == "death_saves":
             if verbose >= 1:

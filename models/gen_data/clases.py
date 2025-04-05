@@ -77,6 +77,8 @@ class Barbarian():
     
     self._actions = barbarian_actions
 
+    self._reckless_attack = False
+
   def __str__(self):
     return "Barbarian"
 
@@ -125,6 +127,8 @@ class FighterStr():
 
     self._actions = fighter_str_actions
 
+    self._action_surges = 0
+
   def __str__(self):
     return "Fighter (STR)"
 
@@ -140,6 +144,8 @@ class FighterDex():
     self._spellcasting = False
 
     self._actions = barbarian_actions
+
+    self._action_surge = 0
 
   def __str__(self):
     return "Fighter (DEX)"
