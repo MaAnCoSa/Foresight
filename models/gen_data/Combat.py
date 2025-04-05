@@ -81,26 +81,29 @@ class Combat:
                   if monster._status == "conscious":
                     possible_targets.append(monster)
 
-                targets = []
-                if action["target_type"] == "creature_amount":
-                  for j in range(action["amount_creatures"]):
-                    choice = random.choice(possible_targets)
-                    targets.append(choice)
-                    possible_targets.remove(choice)
-                elif action["target_type"] == "aoe":
-                  j = 0
-                  random.shuffle(possible_targets)
-                  for possible_target in possible_targets:
-                    p = 1/(j+1) # Probability of enemy being in range.
-                    in_range = random.choices(population=[True, False], weights=[p, 1-p])
-                    if in_range == True:
-                      targets.append(possible_target)
-                    
-                    
-                for target in targets:
-                  result = target.receive_action(action)
+                if len(possible_targets) != 0:
+                  targets = []
+                  if action["target_type"] == "creature_amount":
+                    for j in range(action["amount_creatures"]):
+                      choice = random.choice(possible_targets)
+                      targets.append(choice)
+                      possible_targets.remove(choice)
+                  elif action["target_type"] == "aoe":
+                    j = 0
+                    random.shuffle(possible_targets)
+                    for possible_target in possible_targets:
+                      p = 1/(j+1) # Probability of enemy being in range.
+                      in_range = random.choices(population=[True, False], weights=[p, 1-p])
+                      if in_range == True:
+                        targets.append(possible_target)
+                      
+                  for target in targets:
+                    result = target.receive_action(action)
+                    if verbose >= 1:
+                      print(f"RESULT: {result}", monster._name, monster._status)
+                else:
                   if verbose >= 1:
-                    print(f"RESULT: {result}", monster._name, monster._status)
+                    print(f"RESULT: No valid targets for action: {action['name']}")
   
           elif player._status == "death_saves":
             if verbose >= 1:
@@ -150,7 +153,7 @@ class Combat:
             random.shuffle(possible_targets)
             for possible_target in possible_targets:
               p = 1/(j+1) # Probability of enemy being in range.
-              in_range = random.choice([True, False], 1, p=[p, 1-p])
+              in_range = random.choices([True, False], weights=[p, 1-p])[0]
               if in_range == True:
                 targets.append(possible_target)
               

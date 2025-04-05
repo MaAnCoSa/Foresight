@@ -52,8 +52,8 @@ class PC:
         
         cha_class = random.choice(
             [
-                # "BARD",
-                # "BARBARIAN",
+                "BARD",
+                "BARBARIAN",
                 # "CLERIC",
                 # "DRUID",
                 "FIGHTER_STR",

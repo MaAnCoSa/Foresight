@@ -42,10 +42,12 @@ class Monster:
                 "value": proficiency["value"]
               })
         
-        self._dmg_vulnerabilities = monster_data['damage_vulnerabilities']
-        self._dmg_resistances = monster_data['damage_resistances']
-        self._dmg_immunities = monster_data['damage_immunities']
-        self._condition_immunities = monster_data['condition_immunities']
+
+        # TODO: Make it consider Bludgeoning, Piercing and Slashing from nonmagical attacks.
+        self._dmg_vulnerabilities = [dmg_type.lower() for dmg_type in monster_data['damage_vulnerabilities']]
+        self._dmg_resistances = [dmg_type.lower() for dmg_type in monster_data['damage_resistances']]
+        self._dmg_immunities = [dmg_type.lower() for dmg_type in monster_data['damage_immunities']]
+        self._condition_immunities = [condition["index"].lower() for condition in monster_data['condition_immunities']]
 
         #print(f"DMG VULNERABILITIES: {self._dmg_vulnerabilities}")
         #print(f"DMG RESISTANCES: {self._dmg_resistances}")
@@ -55,72 +57,195 @@ class Monster:
         self._actions = []
         multiattack_actions = []
         for original_action in monster_data["actions"]:
-          print("OG Action:\t" + str(original_action))
+          print("OG Action:\t" + str(original_action) + "\n")
           if original_action["name"] not in multiattack_actions:
             if original_action["name"] == "Multiattack":
-              #print("MULTIATTACK")
+              print("MULTIATTACK")
 
-              attacks = []
-              for multi_act in original_action["actions"]:
-                #print("Multi act: " + str(multi_act))
+              if "action_options" in original_action:
+                print("Action Options")
+                for option in original_action["action_options"]["from"]["options"]:
+                  print(f"OPTION: {option}\n")
+                  attacks = []
+                  if "items" not in option:
+                    items = [option]
+                  else:
+                    items = option["items"]
 
-                for act in monster_data["actions"]:
-                  #print("\t" + str(act))
-                  if act["name"] == multi_act["action_name"] and act["name"] != "Multiattack" and multi_act["type"] != "ability":
-                    #print("FOUND:\t" + str(act))
+                  for item in items:
+                    for act in monster_data["actions"]:
+                      print(f"act: {act["name"]}\n")
+                      if act["name"] == item["action_name"] and act["name"] != "Multiattack" and item["option_type"] != "ability" and "damage" in act:
+                        print("FOUND:\t" + str(act["name"]))
 
-                    count_parts = str(multi_act["count"]).split("d")
-                    if len(count_parts) == 1:
-                      attack_count = int(count_parts[0])
-                    else:
-                      attack_count = 0
-                      for attk in count_parts[0]:
-                        attack_count += random.randint(1, int(count_parts[1]))
+                        count_parts = str(item["count"]).split("d")
+                        if len(count_parts) == 1:
+                          attack_count = int(count_parts[0])
+                        else:
+                          attack_count = 0
+                          for attk in count_parts[0]:
+                            attack_count += random.randint(1, int(count_parts[1]))
 
-                    for count in range(attack_count):
-                      if "attack_bonus" in act:
-                         attack_bonus = act["attack_bonus"]
+                        for count in range(attack_count):
+                          if "attack_bonus" in act:
+                            attack_bonus = act["attack_bonus"]
+                          else:
+                            attack_bonus = 0
+
+                          attack = {
+                              "attack_bonus": attack_bonus,
+                              "sources": []
+                          }
+                          for source in act['damage']:
+                            if "choose" in source:
+                              for option in source["from"]["options"]:
+                                dmg_parts = option["damage_dice"].split("+")
+                                if len(dmg_parts) == 1:
+                                    dmg_bonus = 0
+                                else:
+                                    dmg_bonus = int(dmg_parts[1])
+
+                                dmg_parts = dmg_parts[0].split("d")
+                                if len(dmg_parts) == 1:
+                                    count = 0
+                                    dmg_dice = int(dmg_parts[0])
+                                else:
+                                    count = int(dmg_parts[0])
+                                    dmg_dice = int(dmg_parts[1])
+
+                                attack_option = {
+                                    "dmg_type": option["damage_type"]["name"],
+                                    "dmg_dice": dmg_dice,
+                                    "count": count,
+                                    "dmg_bonus": dmg_bonus
+                                  }
+                                
+                                attack["sources"].append(attack_option)
+
+                            else:
+                              dmg_parts = source["damage_dice"].split("+")
+                              if len(dmg_parts) == 1:
+                                dmg_bonus = 0
+                              else:
+                                dmg_bonus = int(dmg_parts[1])
+
+                              dmg_parts = dmg_parts[0].split("d")
+                              if len(dmg_parts) == 1:
+                                count = 0
+                                dmg_dice = int(dmg_parts[0])
+                              else:
+                                count = int(dmg_parts[0])
+                                dmg_dice = int(dmg_parts[1])
+
+                              attack["sources"].append({
+                                  "dmg_type": source["damage_type"]["name"],
+                                  "dmg_dice": dmg_dice,
+                                  "count": count,
+                                  "dmg_bonus": dmg_bonus
+                              })
+
+                          multiattack_actions.append(act["name"])
+                          attacks.append(attack)
+                    
+                  action = {
+                    "name": original_action["name"],
+                    "type": "attack#physical",
+                    "target_type": "creature_amount",
+                    "amount_creatures": 1,
+                    "attacks": attacks
+                  }
+                  self._actions.append(action)
+                  #print(f"FINAL MULTIATTACK ACTION: {action}")
+                    
+
+              else:
+                attacks = []
+                for multi_act in original_action["actions"]:
+                  #print("Multi act: " + str(multi_act))
+
+                  for act in monster_data["actions"]:
+                    #print("\t" + str(act))
+                    if act["name"] == multi_act["action_name"] and act["name"] != "Multiattack" and multi_act["type"] != "ability" and "damage" in act:
+                      print("FOUND:\t" + str(act))
+
+                      count_parts = str(multi_act["count"]).split("d")
+                      if len(count_parts) == 1:
+                        attack_count = int(count_parts[0])
                       else:
-                         attack_bonus = 0
+                        attack_count = 0
+                        for attk in count_parts[0]:
+                          attack_count += random.randint(1, int(count_parts[1]))
 
-                      attack = {
-                          "attack_bonus": attack_bonus,
-                          "sources": []
-                      }
-                      for source in act['damage']:
-                        if 'choose' not in source:
-                          dmg_parts = source["damage_dice"].split("+")
-                          if len(dmg_parts) == 1:
-                             dmg_bonus = 0
+                      for count in range(attack_count):
+                        if "attack_bonus" in act:
+                          attack_bonus = act["attack_bonus"]
+                        else:
+                          attack_bonus = 0
+
+                        attack = {
+                            "attack_bonus": attack_bonus,
+                            "sources": []
+                        }
+                        for source in act['damage']:
+                          if "choose" in source:
+                            for option in source["from"]["options"]:
+                              dmg_parts = option["damage_dice"].split("+")
+                              if len(dmg_parts) == 1:
+                                  dmg_bonus = 0
+                              else:
+                                  dmg_bonus = int(dmg_parts[1])
+
+                              dmg_parts = dmg_parts[0].split("d")
+                              if len(dmg_parts) == 1:
+                                  count = 0
+                                  dmg_dice = int(dmg_parts[0])
+                              else:
+                                  count = int(dmg_parts[0])
+                                  dmg_dice = int(dmg_parts[1])
+
+                              attack_option = {
+                                  "dmg_type": option["damage_type"]["name"],
+                                  "dmg_dice": dmg_dice,
+                                  "count": count,
+                                  "dmg_bonus": dmg_bonus
+                                }
+                              
+                              attack["sources"].append(attack_option)
+
                           else:
-                             dmg_bonus = int(dmg_parts[1])
+                            dmg_parts = source["damage_dice"].split("+")
+                            if len(dmg_parts) == 1:
+                              dmg_bonus = 0
+                            else:
+                              dmg_bonus = int(dmg_parts[1])
 
-                          dmg_parts = dmg_parts[0].split("d")
-                          if len(dmg_parts) == 1:
-                             count = 0
-                             dmg_dice = int(dmg_parts[0])
-                          else:
-                             count = int(dmg_parts[0])
-                             dmg_dice = int(dmg_parts[1])
+                            dmg_parts = dmg_parts[0].split("d")
+                            if len(dmg_parts) == 1:
+                              count = 0
+                              dmg_dice = int(dmg_parts[0])
+                            else:
+                              count = int(dmg_parts[0])
+                              dmg_dice = int(dmg_parts[1])
 
-                          attack["sources"].append({
-                              "dmg_type": source["damage_type"]["name"],
-                              "dmg_dice": dmg_dice,
-                              "count": count,
-                              "dmg_bonus": dmg_bonus
-                          })
+                            attack["sources"].append({
+                                "dmg_type": source["damage_type"]["name"],
+                                "dmg_dice": dmg_dice,
+                                "count": count,
+                                "dmg_bonus": dmg_bonus
+                            })
 
-                      multiattack_actions.append(act["name"])
-                      attacks.append(attack)
-              action = {
-                "name": original_action["name"],
-                "type": "attack#physical",
-                "target_type": "creature_amount",
-                "amount_creatures": 1,
-                "attacks": attacks
-              }
-              self._actions.append(action)
-              #print(f"FINAL MULTIATTACK ACTION: {action}")
+                        multiattack_actions.append(act["name"])
+                        attacks.append(attack)
+
+                action = {
+                  "name": original_action["name"],
+                  "type": "attack#physical",
+                  "target_type": "creature_amount",
+                  "amount_creatures": 1,
+                  "attacks": attacks
+                }
+                self._actions.append(action)
+                #print(f"FINAL MULTIATTACK ACTION: {action}")
 
             elif "damage" in original_action and "usage" in original_action:
               action = {
@@ -224,23 +349,27 @@ class Monster:
             if "level" in spellcasting_info:
               self._spellcasting_level = spellcasting_info["level"]
             else:
-              self._spellcasting_level = 0
+              self._spellcasting_level = 1
 
             self._spellcasting_modifier = self._modifiers[spellcasting_info["ability"]["name"]]
-            self._spellcasting_dc = spellcasting_info["dc"]
+            if "dc" in spellcasting_info:
+              self._spellcasting_dc = spellcasting_info["dc"]
             if "slots" in spellcasting_info:
               self._spell_slots = spellcasting_info["slots"]
               self._remaining_spell_slots = self._spell_slots
             else:
               self._spell_slots = {}
+              self._remaining_spell_slots = {}
+
             
             # We add each spell.
+            spell_exceptions = ["Sleep"]
             for spell in spellcasting_info["spells"]:
               for original_spell in spells_data:
-                if original_spell["name"] == spell["name"]:
-                  #print(original_spell["name"])
+                if original_spell["name"] == spell["name"] and original_spell["name"] not in spell_exceptions:
+                  print(f"OG SPELL: {original_spell["name"]}")
                   if "damage" in original_spell:
-                    #print("Considered spell action.")
+                    print("Considered spell action.")
                     spell_action = {}
 
                     spell_action["name"] = original_spell["name"]
@@ -272,12 +401,10 @@ class Monster:
                     if "damage_at_slot_level" in original_spell["damage"]:
                       spell_dmg = original_spell["damage"]["damage_at_slot_level"][str(original_spell["level"])]
                     elif "damage_at_character_level" in original_spell["damage"]:
-                      
+                      level_to_use = 1
                       for i in list(original_spell["damage"]["damage_at_character_level"].keys()):
-                        if self._spellcasting_level == 0:
-                          level_to_consider = spell["level"]
-                        else:
-                          level_to_consider = self._spellcasting_level
+                        level_to_consider = self._spellcasting_level
+
                         if level_to_consider >= int(i):
                           level_to_use = i
                       spell_dmg = original_spell["damage"]["damage_at_character_level"][level_to_use]
@@ -288,10 +415,17 @@ class Monster:
                     else:
                        dmg_bonus = 0
                     dmg_roll = dmg_parts[0].split("d")
+                    if len(dmg_roll) == 1:
+                      count = 0
+                      dmg_dice = 1
+                      dmg_bonus += int(dmg_roll[0])
+                    else:
+                      count = int(dmg_roll[0])
+                      dmg_dice = int(dmg_roll[1])
                     if "dc" in original_spell:
                       dmg_rolls = [{
-                          "count": int(dmg_roll[0]),
-                          "dmg_dice": int(dmg_roll[1]),
+                          "count": count,
+                          "dmg_dice": dmg_dice,
                           "dmg_bonus": int(dmg_bonus),
                           "dmg_type": original_spell["damage"]["damage_type"]["index"]
                       }]
@@ -313,8 +447,11 @@ class Monster:
                     if "slots" not in spellcasting_info:
                       if str(spell_action["level"]) not in self._spell_slots:
                         self._spell_slots[str(spell_action["level"])] = 1
+                        self._remaining_spell_slots[str(spell_action["level"])] = 1
                       else:
                         self._spell_slots[str(spell_action["level"])] += 1
+                        self._remaining_spell_slots[str(spell_action["level"])] += 1
+
           else:
             self._spellcasting = False
                 
@@ -458,12 +595,14 @@ class Monster:
     def get_total_dmg(self, dmg_rolls):
       total_dmg = 0
       for dmg_roll in dmg_rolls:
-        if dmg_roll["dmg_type"] in self._dmg_vulnerabilities:
+        if dmg_roll["dmg_type"].lower() in self._dmg_vulnerabilities:
           dmg = 2 * dmg_roll["dmg"]
           total_dmg += dmg
-        elif dmg_roll["dmg_type"] in self._dmg_resistances:
+        elif dmg_roll["dmg_type"].lower() in self._dmg_resistances:
           dmg = math.floor(dmg_roll["dmg"] / 2)
           total_dmg += dmg
+        elif dmg_roll["dmg_type"].lower() in self._dmg_immunities:
+          total_dmg += 0
         else:
           dmg = dmg_roll["dmg"]
           total_dmg += dmg
