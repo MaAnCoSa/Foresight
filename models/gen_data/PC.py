@@ -160,7 +160,17 @@ class PC:
             self._hp_max += random.randint(1, self._class._hit_die) + self._modifiers["CON"]
             self._hp = self._hp_max
 
-    def use_action(self, verbose=0):
+    def use_action(self, bonus_action=False, verbose=0):
+        if bonus_action == True:
+            action_list = self._class._bonus_actions[self._level]
+        else:
+            action_list = self._class._actions[self._level]
+
+        #print(f"ACTION LIST: {action_list}")
+
+        if len(action_list) == 0:
+            return None
+        
         action_weights = []
 
         # We first consider options from the different classes.
@@ -169,7 +179,7 @@ class PC:
             use_reckless = random.choices(population=[True, False], weights=[1-p, p])
                         
         i = 0
-        for action in self._class._actions[self._level]:
+        for action in action_list:
             action_type = action["type"].split("#")
 
             if action_type[1] == "spell":
@@ -183,7 +193,10 @@ class PC:
 
                 # If someoneis below half HP, we consider healing.
                 if max_status > 1:
-                    max_heal = action["heal_dice"] + self._modifiers[action["heal_bonus"]]
+                    if action_type[1] == "self":
+                        max_heal = action["heal_dice"] + action["heal_bonus"]
+                    else:
+                        max_heal = action["heal_dice"] + self._modifiers[action["heal_bonus"]]
                     action_weights.append(math.pow(max_heal, 3)*max_status)
                 else:
                     action_weights.append(0.0)
@@ -214,20 +227,26 @@ class PC:
 
             i += 1
 
+        # print(f"ACTION LIST: {action_list}")
+        # print(f"ACTION WEIGHTS: {action_weights}")
+        # print(f"SPELL SLOTS: {self._remaining_spell_slots}")
+
         total = sum(action_weights)
+        if total == 0:
+            return None
         action_weights_norm = []
         for weight in action_weights:
             action_weights_norm.append(weight / total)
 
-        action = random.choices(population=self._class._actions[self._level], weights=action_weights_norm)[0]
+        action = random.choices(population=action_list, weights=action_weights_norm)[0]
 
         if verbose >= 2:
             print("\n\tPossible Actions:")
             t = PrettyTable(['Action', 'Weight', 'Weight Norm'])
 
-            for i in range(len(self._class._actions[self._level])):
+            for i in range(len(action_list)):
                 t.add_row([
-                    self._class._actions[self._level][i]["name"],
+                    action_list[i]["name"],
                     action_weights[i],
                     round(action_weights_norm[i], 2)])
             for row in t.get_string().split("\n"):
@@ -318,14 +337,24 @@ class PC:
 
         elif action_type[0] == "heal":
             if action["heal_bonus"] != None:
-                heal_bonus = self._modifiers[action["heal_bonus"]]
+                if action_type[1] == "self":
+                    heal_bonus = action["heal_bonus"]
+                else:
+                    heal_bonus = self._modifiers[action["heal_bonus"]]
             else:
                 heal_bonus = 0
 
             healed_hp = sum([random.randint(1,action["heal_dice"]) for _ in range(action["count"])]) + heal_bonus
+            
+            if action_type[1] == "self":
+                self_flag = True
+            else:
+                self_flag = False
+
             return {
                 "name": action["name"],
                 "type": "heal",
+                "self": self_flag,
                 "healed_hp": healed_hp,
                 "creatures": action["creatures"]
             }

@@ -1,6 +1,9 @@
 from actions.fighter_str_actions import fighter_str_actions
+from actions.fighter_str_bonus_actions import fighter_str_bonus_actions
 from actions.barbarian_actions import barbarian_actions
+from actions.barbarian_bonus_actions import barbarian_bonus_actions
 from actions.bard_actions import bard_actions
+from actions.bard_bonus_actions import bard_bonus_actions
 import random
 
 class Bard():
@@ -37,6 +40,7 @@ class Bard():
     }
 
     self._actions = bard_actions
+    self._bonus_actions = bard_bonus_actions
 
   def __str__(self):
     return "Bard"
@@ -76,6 +80,7 @@ class Barbarian():
     }
     
     self._actions = barbarian_actions
+    self._bonus_actions = barbarian_bonus_actions
 
     self._reckless_attack = False
 
@@ -126,6 +131,7 @@ class FighterStr():
     self._spellcasting = False
 
     self._actions = fighter_str_actions
+    self._bonus_actions = fighter_str_bonus_actions
 
     self._action_surges = 0
 
