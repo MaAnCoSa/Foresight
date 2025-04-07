@@ -547,9 +547,8 @@ class Monster:
             attacks = []
             for attack in action["attacks"]:
 
-              attack_roll = (
-                  roll_d20() + attack["attack_bonus"]
-              )
+              attack_roll = roll_d20()
+              attack_roll["modifiers"] += attack["attack_bonus"]
 
               dmg_rolls = []
               for dmg_roll in attack["sources"]:
@@ -614,7 +613,17 @@ class Monster:
         if action_type[0] == "attack":
             received_attacks = []
             for attack in action["attacks"]:
-              if attack["attack_roll"] >= self._ac:
+              if self._status != "conscious":
+                 attack["attack_roll"]["advantage"] = True
+
+              if attack["attack_roll"]["advantage"] == True:
+                attack_roll = max(attack["attack_roll"]["rolls"]) + attack["attack_roll"]["modifiers"]
+              elif attack["attack_roll"]["disadvantage"] == True:
+                attack_roll = min(attack["attack_roll"]["rolls"]) + attack["attack_roll"]["modifiers"]
+              else:
+                attack_roll = attack["attack_roll"]["rolls"][0] + attack["attack_roll"]["modifiers"]
+
+              if attack_roll >= self._ac:
                   if self._status == "death_saves":
                       self._death_saves["failures"] += 2
                   elif self._status == "conscious":
@@ -643,7 +652,7 @@ class Monster:
             }
             
         elif action_type[0] == "dc":
-          st_roll = roll_d20() + self._modifiers[action["st"]]
+          st_roll = roll_d20()["rolls"][0] + self._modifiers[action["st"]]
           if st_roll < action["dc"]:
             total_dmg = self.get_total_dmg(action["dmg_rolls"])
             self._hp -= total_dmg

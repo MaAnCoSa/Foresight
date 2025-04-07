@@ -12,7 +12,7 @@ class Combat:
     self._combatants = self._players + self._monsters
     self._turn_order = []
     for combatant in self._combatants:
-      iniative_roll = roll_d20() + combatant._initiative
+      iniative_roll = roll_d20()["rolls"][0] + combatant._initiative
       self._turn_order.append({
           "combatant": combatant,
           "initiative": iniative_roll

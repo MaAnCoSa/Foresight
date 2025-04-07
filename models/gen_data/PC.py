@@ -289,21 +289,16 @@ class PC:
                 
                 if self._class._name == "Barbarian":
                     if use_reckless == True:
-                        attack_d20 = roll_d20(advantage=True)
+                        attack_roll = roll_d20(advantage=True)
                         self._turns_since_last_reckless = 0
                     else:
-                        attack_d20 = roll_d20()
+                        attack_roll = roll_d20()
                         self._turns_since_last_reckless += 1
                 else:
-                    attack_d20 = roll_d20()
+                    attack_roll = roll_d20()
 
-
-                attack_roll = (
-                    attack_d20
-                    + self._modifiers[attack_stat]
-                    + self._prof_bonus
-                )
-
+                attack_roll["modifiers"] += self._modifiers[attack_stat] + self._prof_bonus
+                
                 dmg_rolls = [ {"dmg": sum([random.randint(1,dmg_roll["dmg_roll"] + self._modifiers[attack_stat]) for roll in range(dmg_roll["count"])]), "dmg_type": dmg_roll["dmg_type"]} for dmg_roll in attack["dmg_rolls"]]
 
                 # dmg_roll = (
@@ -391,8 +386,17 @@ class PC:
         if action_type[0] == "attack":
             received_attacks = []
             for attack in action["attacks"]:
-                
-                if attack["attack_roll"] >= self._ac:
+                if self._status != "conscious":
+                    attack["attack_roll"]["advantage"] = True
+
+                if attack["attack_roll"]["advantage"] == True:
+                    attack_roll = max(attack["attack_roll"]["rolls"]) + attack["attack_roll"]["modifiers"]
+                elif attack["attack_roll"]["disadvantage"] == True:
+                    attack_roll = min(attack["attack_roll"]["rolls"]) + attack["attack_roll"]["modifiers"]
+                else:
+                    attack_roll = attack["attack_roll"]["rolls"][0] + attack["attack_roll"]["modifiers"]
+
+                if attack_roll >= self._ac:
                     if self._status == "death_saves":
                         self._death_saves["failures"] += 2
                     elif self._status == "conscious":
@@ -429,7 +433,7 @@ class PC:
             }
         
         elif action_type[0] == "dc":
-            st_roll = roll_d20() + self._modifiers[action["st"]]
+            st_roll = roll_d20()["rolls"][0] + self._modifiers[action["st"]]
             if st_roll < action["dc"]:
                 total_dmg = self.get_total_dmg(action["dmg_rolls"])
                 self._hp -= total_dmg
@@ -479,7 +483,7 @@ class PC:
             self.reset_death_saves()
 
     def throw_death_save(self):
-        death_save = roll_d20()
+        death_save = roll_d20()["rolls"][0]
         if death_save >= 11:
             self._death_saves["successes"] += 1
             result = "success"
