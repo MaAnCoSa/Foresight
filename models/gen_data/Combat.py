@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from utils import roll_d20
 
 class Combat:
   
@@ -11,13 +12,66 @@ class Combat:
     self._combatants = self._players + self._monsters
     self._turn_order = []
     for combatant in self._combatants:
-      iniative_roll = random.randint(1, 20) + combatant._initiative
+      iniative_roll = roll_d20() + combatant._initiative
       self._turn_order.append({
           "combatant": combatant,
           "initiative": iniative_roll
       })
 
     self._turn_order.sort(key=lambda x: x["initiative"], reverse=True)
+
+  def apply_player_action(self, action, player, verbose=0):
+    if action == None:
+      if verbose >= 1:
+        print(f"ACTION: No possible actions", player._class, player._status)
+    else:
+      if verbose >= 1:
+        print(f"ACTION: {action}", player._class, player._status)
+
+
+      # If the action is to heal a teammate:
+      if action["type"] == "heal":
+        if action["self"] == True:
+          result = player.receive_action(action)
+          if verbose >= 1:
+            print(f"RESULT: {result}", player._class, player._status)
+        else:
+          for teammate in self._party.heal_priority()[:action["creatures"]]:
+            result = teammate.receive_action(action)
+            if verbose >= 1:
+              print(f"RESULT: {result}", teammate._class, teammate._status)
+
+      # If the action is against a monster:
+      elif action["type"] in ["attack", "dc"]:
+        possible_targets = []
+        
+        for monster in self._monster_group._monsters:
+          if monster._status == "conscious":
+            possible_targets.append(monster)
+
+        if len(possible_targets) != 0:
+          targets = []
+          if action["target_type"] == "creature_amount":
+            for j in range(action["amount_creatures"]):
+              choice = random.choice(possible_targets)
+              targets.append(choice)
+              possible_targets.remove(choice)
+          elif action["target_type"] == "aoe":
+            j = 0
+            random.shuffle(possible_targets)
+            for possible_target in possible_targets:
+              p = 1/(j+1) # Probability of enemy being in range.
+              in_range = random.choices(population=[True, False], weights=[p, 1-p])
+              if in_range == True:
+                targets.append(possible_target)
+              
+          for target in targets:
+            result = target.receive_action(action)
+            if verbose >= 1:
+              print(f"RESULT: {result}", monster._name, monster._status)
+        else:
+          if verbose >= 1:
+            print(f"RESULT: No valid targets for action: {action['name']}")
 
   def combat(self, verbose=0):
     # TODO: adapt it for any action, not just unarmed strike.
@@ -62,59 +116,13 @@ class Combat:
             print(f"NUM ACTIONS: {num_actions}")
             for _ in range(num_actions):
               action = player.use_action(bonus_action=False, verbose=verbose)
-              
 
-              if action == None:
-                if verbose >= 1:
-                  print(f"ACTION: No possible actions", player._class, player._status)
-              else:
-                if verbose >= 1:
-                  print(f"ACTION: {action}", player._class, player._status)
+              self.apply_player_action(action, player, verbose)
 
-
-                # If the action is to heal a teammate:
-                if action["type"] == "heal":
-                  if action["self"] == True:
-                    result = player.receive_action(action)
-                    if verbose >= 1:
-                      print(f"RESULT: {result}", player._class, player._status)
-                  else:
-                    for teammate in self._party.heal_priority()[:action["creatures"]]:
-                      result = teammate.receive_action(action)
-                      if verbose >= 1:
-                        print(f"RESULT: {result}", teammate._class, teammate._status)
-
-                # If the action is against a monster:
-                elif action["type"] in ["attack", "dc"]:
-                  possible_targets = []
-                  
-                  for monster in self._monster_group._monsters:
-                    if monster._status == "conscious":
-                      possible_targets.append(monster)
-
-                  if len(possible_targets) != 0:
-                    targets = []
-                    if action["target_type"] == "creature_amount":
-                      for j in range(action["amount_creatures"]):
-                        choice = random.choice(possible_targets)
-                        targets.append(choice)
-                        possible_targets.remove(choice)
-                    elif action["target_type"] == "aoe":
-                      j = 0
-                      random.shuffle(possible_targets)
-                      for possible_target in possible_targets:
-                        p = 1/(j+1) # Probability of enemy being in range.
-                        in_range = random.choices(population=[True, False], weights=[p, 1-p])
-                        if in_range == True:
-                          targets.append(possible_target)
-                        
-                    for target in targets:
-                      result = target.receive_action(action)
-                      if verbose >= 1:
-                        print(f"RESULT: {result}", monster._name, monster._status)
-                  else:
-                    if verbose >= 1:
-                      print(f"RESULT: No valid targets for action: {action['name']}")
+              if action["type"] == "attack" and player._extra_attack > 0:
+                for _ in range(player._extra_attack):
+                  action = player.use_action(bonus_action=False, verbose=verbose, is_extra_attack=True)
+                  self.apply_player_action(action, player, verbose)
 
             # Now, the player uses a bonus action:
             num_bonus_actions = 1

@@ -1,4 +1,5 @@
 import random
+from utils import roll_d20
 from clases import (
     Bard,
     Barbarian,
@@ -117,6 +118,8 @@ class PC:
         self._dmg_vulnerabilities = []
         self._dmg_resistances = []
 
+        self._extra_attack = 0
+
         self._death_saves = {"successes": 0, "failures": 0}
 
         if self._level != 1:
@@ -128,6 +131,9 @@ class PC:
             if self._level >= 2:
                 self._class._reckless_attack = True
             self._turns_since_last_reckless = 0
+
+            if self._level >= 5:
+                self._extra_attack = 1
         if self._class._name == "Bard":
             self._ac += 1 # Leather armor
             self._spell_dc = 8 + self._prof_bonus + self._modifiers["CHA"]
@@ -139,6 +145,9 @@ class PC:
             self._turns_since_action_surge = 1
             if self._level >= 2:
                 self._class._action_surges = 1
+
+            if self._level >= 5:
+                self._extra_attack = 1
 
     def set_party(self, party):
         self._party = party
@@ -160,7 +169,7 @@ class PC:
             self._hp_max += random.randint(1, self._class._hit_die) + self._modifiers["CON"]
             self._hp = self._hp_max
 
-    def use_action(self, bonus_action=False, verbose=0):
+    def use_action(self, bonus_action=False, is_extra_attack=False, verbose=0):
         if bonus_action == True:
             action_list = self._class._bonus_actions[self._level]
         else:
@@ -181,6 +190,10 @@ class PC:
         i = 0
         for action in action_list:
             action_type = action["type"].split("#")
+
+            if is_extra_attack == True and action_type[0] != "attack":
+                action_weights.append(0.0)
+                continue
 
             if action_type[1] == "spell":
                 #print("SPELL SLOTS:", self._remaining_spell_slots)
@@ -276,13 +289,13 @@ class PC:
                 
                 if self._class._name == "Barbarian":
                     if use_reckless == True:
-                        attack_d20 = max([random.randint(1, 20), random.randint(1, 20)])
+                        attack_d20 = roll_d20(advantage=True)
                         self._turns_since_last_reckless = 0
                     else:
-                        attack_d20 = random.randint(1, 20)
+                        attack_d20 = roll_d20()
                         self._turns_since_last_reckless += 1
                 else:
-                    attack_d20 = random.randint(1, 20)
+                    attack_d20 = roll_d20()
 
 
                 attack_roll = (
@@ -416,7 +429,7 @@ class PC:
             }
         
         elif action_type[0] == "dc":
-            st_roll = random.randint(1, 20) + self._modifiers[action["st"]]
+            st_roll = roll_d20() + self._modifiers[action["st"]]
             if st_roll < action["dc"]:
                 total_dmg = self.get_total_dmg(action["dmg_rolls"])
                 self._hp -= total_dmg
@@ -466,7 +479,7 @@ class PC:
             self.reset_death_saves()
 
     def throw_death_save(self):
-        death_save = random.randint(1, 20)
+        death_save = roll_d20()
         if death_save >= 11:
             self._death_saves["successes"] += 1
             result = "success"

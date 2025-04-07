@@ -1,4 +1,5 @@
 import random
+from utils import roll_d20
 import math
 from prettytable import PrettyTable
 class Monster:
@@ -547,7 +548,7 @@ class Monster:
             for attack in action["attacks"]:
 
               attack_roll = (
-                  random.randint(1, 20) + attack["attack_bonus"]
+                  roll_d20() + attack["attack_bonus"]
               )
 
               dmg_rolls = []
@@ -642,7 +643,7 @@ class Monster:
             }
             
         elif action_type[0] == "dc":
-          st_roll = random.randint(1, 20) + self._modifiers[action["st"]]
+          st_roll = roll_d20() + self._modifiers[action["st"]]
           if st_roll < action["dc"]:
             total_dmg = self.get_total_dmg(action["dmg_rolls"])
             self._hp -= total_dmg
