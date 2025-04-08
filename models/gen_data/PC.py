@@ -41,7 +41,7 @@ proficiency_bonus = {
 }
 
 class PC:
-    def __init__(self, level):
+    def __init__(self, level, cha_class):
         self._type = "player"
         self._level = level
         self._stats = {"STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 0}
@@ -51,22 +51,6 @@ class PC:
         
         self._prof_bonus = proficiency_bonus[self._level]
         
-        cha_class = random.choice(
-            [
-                "BARD",
-                "BARBARIAN",
-                # "CLERIC",
-                # "DRUID",
-                "FIGHTER_STR",
-                # "FIGHTER_DEX",
-                # "MONK",
-                # "PALADIN",
-                # "RANGER",
-                # "ROGUE",
-                # "SORCERER",
-                # "WIZARD",
-            ]
-        )
         if cha_class == "BARD":
             self._class = Bard()
             self._remaining_spell_slots = self._class._spell_slots[self._level]
@@ -119,6 +103,8 @@ class PC:
         self._dmg_resistances = []
 
         self._extra_attack = 0
+        # TODO: Add modifiers functionality for abilities like this one:
+        self._bardic_inspiration = 0
 
         self._death_saves = {"successes": 0, "failures": 0}
 

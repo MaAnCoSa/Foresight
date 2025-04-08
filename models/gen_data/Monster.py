@@ -58,15 +58,15 @@ class Monster:
         self._actions = []
         multiattack_actions = []
         for original_action in monster_data["actions"]:
-          print("OG Action:\t" + str(original_action) + "\n")
+          #print("OG Action:\t" + str(original_action) + "\n")
           if original_action["name"] not in multiattack_actions:
             if original_action["name"] == "Multiattack":
-              print("MULTIATTACK")
+              #print("MULTIATTACK")
 
               if "action_options" in original_action:
-                print("Action Options")
+                #print("Action Options")
                 for option in original_action["action_options"]["from"]["options"]:
-                  print(f"OPTION: {option}\n")
+                  #print(f"OPTION: {option}\n")
                   attacks = []
                   if "items" not in option:
                     items = [option]
@@ -75,9 +75,9 @@ class Monster:
 
                   for item in items:
                     for act in monster_data["actions"]:
-                      print(f"act: {act["name"]}\n")
+                      #print(f"act: {act["name"]}\n")
                       if act["name"] == item["action_name"] and act["name"] != "Multiattack" and item["option_type"] != "ability" and "damage" in act:
-                        print("FOUND:\t" + str(act["name"]))
+                        #print("FOUND:\t" + str(act["name"]))
 
                         count_parts = str(item["count"]).split("d")
                         if len(count_parts) == 1:
@@ -167,7 +167,7 @@ class Monster:
                   for act in monster_data["actions"]:
                     #print("\t" + str(act))
                     if act["name"] == multi_act["action_name"] and act["name"] != "Multiattack" and multi_act["type"] != "ability" and "damage" in act:
-                      print("FOUND:\t" + str(act))
+                      #print("FOUND:\t" + str(act))
 
                       count_parts = str(multi_act["count"]).split("d")
                       if len(count_parts) == 1:
@@ -368,9 +368,9 @@ class Monster:
             for spell in spellcasting_info["spells"]:
               for original_spell in spells_data:
                 if original_spell["name"] == spell["name"] and original_spell["name"] not in spell_exceptions:
-                  print(f"OG SPELL: {original_spell["name"]}")
+                  #print(f"OG SPELL: {original_spell["name"]}")
                   if "damage" in original_spell:
-                    print("Considered spell action.")
+                    #print("Considered spell action.")
                     spell_action = {}
 
                     spell_action["name"] = original_spell["name"]
@@ -465,7 +465,7 @@ class Monster:
         consider_healing = False
         i = 0
         for action in self._actions:
-            print(action)
+            #print(action)
             action_type = action["type"].split("#")
 
             if action_type[1] == "spell":

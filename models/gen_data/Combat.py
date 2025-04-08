@@ -98,13 +98,14 @@ class Combat:
             if player._class._name == "FighterStr":
               if player._class._action_surges > 0:
                 p = 2/(player._turns_since_action_surge+3)
-                print(f"Prob of using Action Surge: {1-p}")
+                #print(f"Prob of using Action Surge: {1-p}")
                 player._use_action_surge = random.choices(population=[True, False], weights=[1-p, p])[0]
-                print(f"USE ACTION SURGE: {player._use_action_surge}")
+                if verbose >= 2:
+                  print(f"USE ACTION SURGE: {player._use_action_surge}")
 
-              print(player._use_action_surge)
+              #print(player._use_action_surge)
               if player._use_action_surge == True:
-                print("use_action_surge is True")
+                #print("use_action_surge is True")
                 num_actions += 1
                 player._use_action_surge = False
                 player._class._action_surges -= 1
@@ -112,8 +113,8 @@ class Combat:
               else:
                 player._turns_since_action_surge += 1
 
-            
-            print(f"NUM ACTIONS: {num_actions}")
+            if verbose >= 1:
+              print(f"NUM ACTIONS: {num_actions}")
             for _ in range(num_actions):
               action = player.use_action(bonus_action=False, verbose=verbose)
 
@@ -244,3 +245,8 @@ class Combat:
 
         if self._monster_group._status == "dead" or self._party._status == "dead":
           break
+
+    if self._monster_group._status == "dead" and self._party._status != "dead":
+      return "party"
+    else:
+      return "monsters"
