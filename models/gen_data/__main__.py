@@ -36,13 +36,13 @@ def __main__(verbose = 0):
         "Vampire, Mist Form"
     ]
 
-    for _ in range(1): #40000):
+    for _ in range(30000):
         # Choosing random monsters
         num_monsters = random.randint(1,7)
         monsters_to_use = []
 
         # TODO: After considering more PC lvls, we can consider bigger CR for monsters.
-        base_cr_idx = random.randint(0, 12) #len(crs)-1)
+        base_cr_idx = random.randint(0, 5) #len(crs)-1)
         min_cr_idx = base_cr_idx - 3
         if min_cr_idx < 0:
             min_cr_idx = 0
@@ -143,27 +143,52 @@ def __main__(verbose = 0):
             remaining_party_hp = sum([pc._hp for pc in party._pcs])
             party_hp_ratio = remaining_party_hp / total_party_hp
 
-            # We label the combat's difficulty by its result:
-            if not_conscious_players_ratio == 1:
-                difficulty = 9          # Definitively Deadly
-            elif not_conscious_players_ratio > (2/3):
-                difficulty = 8          # Extremely Deadly
-            elif not_conscious_players_ratio > (1/3):
-                difficulty = 7          # Very Deadly
-            elif not_conscious_players_ratio > 0:
-                difficulty = 6          # Deadly
-            elif party_hp_ratio < 0.2:
-                difficulty = 5          # Hard
-            elif party_hp_ratio < 0.4:
-                difficulty = 4          # Medium
-            elif party_hp_ratio < 0.6:
-                difficulty = 3          # Easy
-            elif party_hp_ratio < 0.8:
-                difficulty = 2          # Very Easy
-            elif party_hp_ratio < 1:
-                difficulty = 1          # Extremely Easy
-            else:
+            total_monsters_hp = sum([monster._hp_max for monster in monsterGroup._monsters])
+            remaining_monsters_hp = sum([monster._hp for monster in monsterGroup._monsters])
+            monsters_hp_ratio = remaining_monsters_hp / total_monsters_hp
+
+            if winner == "party" and party_hp_ratio == 1.0:
                 difficulty = 0          # Trivial
+            elif winner == "party" and party_hp_ratio >= 0.75:
+                difficulty = 1          # Very Easy
+            elif winner == "party" and party_hp_ratio >= 0.5:
+                difficulty = 2          # Easy
+            elif winner == "party" and party_hp_ratio >= 0.25:
+                difficulty = 3          # Medium
+            elif winner == "party" and party_hp_ratio >= 0:
+                difficulty = 4          # Hard
+            elif winner == "monsters" and monsters_hp_ratio < 0.25:
+                difficulty = 5          # Deadly
+            elif winner == "monsters" and monsters_hp_ratio < 0.5:
+                difficulty = 6
+            elif winner == "monsters" and monsters_hp_ratio < 0.75:
+                difficulty = 7
+            elif winner == "monsters" and monsters_hp_ratio < 1.0:
+                difficulty = 8
+            elif winner == "monsters" and monsters_hp_ratio == 1.0:
+                difficulty = 9
+
+            # We label the combat's difficulty by its result:
+            # if not_conscious_players_ratio == 1:
+            #     difficulty = 9          # Definitively Deadly
+            # elif not_conscious_players_ratio > (2/3):
+            #     difficulty = 8          # Extremely Deadly
+            # elif not_conscious_players_ratio > (1/3):
+            #     difficulty = 7          # Very Deadly
+            # elif not_conscious_players_ratio > 0:
+            #     difficulty = 6          # Deadly
+            # elif party_hp_ratio < 0.2:
+            #     difficulty = 5          # Hard
+            # elif party_hp_ratio < 0.4:
+            #     difficulty = 4          # Medium
+            # elif party_hp_ratio < 0.6:
+            #     difficulty = 3          # Easy
+            # elif party_hp_ratio < 0.8:
+            #     difficulty = 2          # Very Easy
+            # elif party_hp_ratio < 1:
+            #     difficulty = 1          # Extremely Easy
+            # else:
+            #     difficulty = 0          # Trivial
 
             # We create the combat's information to append to our list of results.
             combats_dataset.add_combat_result({
@@ -335,7 +360,7 @@ def __main__(verbose = 0):
     # print(combats_df)
 
     # We save the DataFrame as a CSV.
-    combats_df.to_csv("../data/raw/combat_results.csv")
+    combats_df.to_csv("../data/raw/combat_results_lvl_5.csv")
 
 
 __main__(verbose=0)
