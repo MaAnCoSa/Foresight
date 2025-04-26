@@ -4,3 +4,4 @@ models/gen_data/actions/__pycache__
 models/venv
 data/raw
 .venv/
+notebooks/salida

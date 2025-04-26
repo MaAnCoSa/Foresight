@@ -36,7 +36,7 @@ def __main__(verbose = 0):
         "Vampire, Mist Form"
     ]
 
-    for _ in range(30000):
+    for _ in range(80000):
         # Choosing random monsters
         num_monsters = random.randint(1,7)
         monsters_to_use = []
