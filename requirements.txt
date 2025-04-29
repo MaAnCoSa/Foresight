@@ -13,7 +13,7 @@ decorator==5.2.1
 executing==2.2.0
 filelock==3.18.0
 fonttools==4.57.0
--e git+https://github.com/MaAnCoSa/Foresight.git@7eff520943adfe6ce67546f6058c25010de37d15#egg=foresight
+-e git+https://github.com/MaAnCoSa/Foresight.git@f1b0bf09b4e2ed0b814daf9eedb00967e6ed4cdb#egg=foresight
 frozenlist==1.5.0
 fsspec==2025.3.2
 ghp-import==2.1.0
@@ -23,6 +23,7 @@ ipython==9.1.0
 ipython_pygments_lexers==1.1.1
 jedi==0.19.2
 Jinja2==3.1.6
+joblib==1.4.2
 jsonschema==4.23.0
 jsonschema-specifications==2024.10.1
 jupyter_client==8.6.3
@@ -51,6 +52,7 @@ pathspec==0.12.1
 pexpect==4.9.0
 pillow==11.1.0
 platformdirs==4.3.7
+polars==1.27.1
 prompt_toolkit==3.0.50
 protobuf==6.30.2
 psutil==7.0.0
@@ -71,9 +73,13 @@ requests==2.32.3
 rich==14.0.0
 rpds-py==0.24.0
 ruff==0.11.4
+scikit-learn==1.6.1
+scipy==1.15.2
+seaborn==0.13.2
 shellingham==1.5.4
 six==1.17.0
 stack-data==0.6.3
+threadpoolctl==3.6.0
 toolz==1.0.0
 tornado==6.4.2
 tqdm==4.67.1
