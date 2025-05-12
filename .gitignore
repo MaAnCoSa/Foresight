@@ -4,6 +4,8 @@ models/gen_data/actions/__pycache__
 models/venv
 data/raw
 .venv/
+
+foresight_env/
 notebooks/salida
 data/processed
 
@@ -20,3 +22,6 @@ models/foresight_xgb/*.out
 models/foresight_xgb/*.jpg
 models/foresight_xgb/.env
 
+models/foresight_knn/*.out
+models/foresight_knn/*.jpg
+models/foresight_knn/.env
