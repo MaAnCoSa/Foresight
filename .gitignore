@@ -25,3 +25,9 @@ models/foresight_xgb/.env
 models/foresight_knn/*.out
 models/foresight_knn/*.jpg
 models/foresight_knn/.env
+
+foresight/*.out
+foresight/*.jpg
+
+foresight/.env
+foresight/https\x3a/
