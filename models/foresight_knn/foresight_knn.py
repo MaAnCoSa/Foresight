@@ -10,15 +10,20 @@ import dagshub
 import mlflow
 import os
 from dotenv import load_dotenv
+import mlflow.sklearn
+
+
 
 load_dotenv()
 
-print("-------------------------------------------------------")
-print("                  CONNECTING TO MLFLOW")
-print("-------------------------------------------------------")
+os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/MaAnCoSa/Foresight.mlflow"
+os.environ["MLFLOW_TRACKING_USERNAME"] = "Jesolis14"
+os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("MLFLOW_TRACKING_PASSWORD")
 
-mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
+mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+
 mlflow.set_experiment("foresight_knn")
+
 
 print("-------------------------------------------------------")
 print("                    SPLITTING DATA")
@@ -55,8 +60,9 @@ X_test_pca = pca.transform(X_test)
 
 # Usar el mejor modelo
 
-
 with mlflow.start_run():  # aquí podrías pasar experiment_id=123 si ya existe
+    mlflow.sklearn.autolog()
+
     print("-------------------------------------------------------")
     print("                    TRAINING KNN")
     print("-------------------------------------------------------")
@@ -108,11 +114,13 @@ with mlflow.start_run():  # aquí podrías pasar experiment_id=123 si ya existe
 
     # 5) Registro en MLflow
     # 5a) Hiperparámetros
-    mlflow.log_params(grid_search.best_params_)
+
+    '''mlflow.log_params(grid_search.best_params_)
 
     # 5b) Métricas
     mlflow.log_metric("f1_macro", f1)
-    mlflow.log_metric("accuracy", acc)
+    mlflow.log_metric("accuracy", acc)'''
+    
 
     # 5c) Matriz de confusión como artefacto
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -127,6 +135,11 @@ with mlflow.start_run():  # aquí podrías pasar experiment_id=123 si ya existe
     plt.close(fig)
 
     # 5c) Modelo
-    mlflow.sklearn.log_model(best_knn, "knn_model")
+    mlflow.sklearn.log_model(
+        sk_model=best_knn,
+        artifact_path="knn_model",
+        registered_model_name="KNN_Classifier"
+    )
 
 print("----------------------- FIN ---------------------")
+
