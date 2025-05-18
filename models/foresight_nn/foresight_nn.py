@@ -7,6 +7,7 @@ from sklearn.utils.class_weight import compute_class_weight
 
 import dagshub
 import mlflow
+import mlflow.tensorflow
 import os
 from dotenv import load_dotenv
 
@@ -16,7 +17,12 @@ print("-------------------------------------------------------")
 print("                  CONNECTING TO MLFLOW")
 print("-------------------------------------------------------")
 
-mlflow.set_tracking_uri(f"https://dagshub.com/{os.getenv("MLFLOW_TRACKING_USERNAME")}/my-first-repo.mlflow")
+os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/MaAnCoSa/Foresight.mlflow"
+os.environ["MLFLOW_TRACKING_USERNAME"] = "Jesolis14"
+os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("MLFLOW_TRACKING_PASSWORD")
+
+mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+
 mlflow.set_experiment("foresight_nn")
 
 print("-------------------------------------------------------")
@@ -136,7 +142,7 @@ tuner = kt.Hyperband(
 )
 
 with mlflow.start_run():
-
+    mlflow.tensorflow.autolog()
     hist = tuner.search(X_resample, y_resample, validation_split=0.2, class_weight=class_weights, verbose=1 )
 
     best_hps = tuner.get_best_hyperparameters()[0]
@@ -150,16 +156,15 @@ with mlflow.start_run():
 
     mi_mejor_modelo = tuner.hypermodel.build(best_hps)
 
-    mlflow.tensorflow.log_model(mi_mejor_modelo, "tensorflow_model")
+    mlflow.tensorflow.log_model(
+        mi_mejor_modelo,
+        artifact_path="nn_model",
+        registered_model_name="NN_Classifier"
+    )
+
 
     historial = mi_mejor_modelo.fit(X_resample, y_resample, validation_split=0.2,  epochs=20,  verbose=1 )
 
-    mlflow.log_metric("accuracy", historial.history["accuracy"][-1])
-    mlflow.log_metric("val_accuracy", historial.history["val_accuracy"][-1])
-    mlflow.log_metric("AUC", historial.history["AUC"][-1])
-    mlflow.log_metric("val_AUC", historial.history["val_AUC"][-1])
-    mlflow.log_metric("loss", historial.history["loss"][-1])
-    mlflow.log_metric("val_loss", historial.history["val_loss"][-1])
 
     def plot_hist(hist):
         plt.figure(figsize=(16,6))
