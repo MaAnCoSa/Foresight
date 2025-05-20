@@ -230,7 +230,6 @@ cd Foresight
 ## 2. Create and activate the virtual environment
 Make sure you have Python **3.12.9** installed. You can manage multiple versions with pyenv or install it directly.
 
-
 ```bash
 python3.12 -m venv foresight_env
 source foresight_env/bin/activate
