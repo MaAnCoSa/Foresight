@@ -1,5 +1,7 @@
 # Foresight: Predicting Encounter Difficulty in Dungeons & Dragons
 
+<img src="docs\images\foresight_frontpage_image.webp" />
+
 <a href="https://cookiecutter-data-science.drivendata.org/" target="_blank">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
@@ -11,7 +13,7 @@
 </a>
 
 
-Foresight is a machine learning project that estimates the difficulty of potential combat encounters in Dungeons & Dragons. By analyzing the composition of player parties and enemy groups, it provides Dungeon Masters with a tool to plan balanced and engaging encounters.
+Foresight is a machine learning project that estimates the difficulty of potential combat encounters in Dungeons & Dragons 5th Edition. By analyzing the composition of player parties and enemy groups, it provides Dungeon Masters with a tool to plan balanced and engaging encounters.
 
 This project was born out of a shared passion for programming and tabletop role-playing games. We combined both worlds to create something fun, technically challenging, and useful for the D&D community.
 
