@@ -4,7 +4,7 @@
 #SBATCH --job-name=FS_mc   #nombre del job
 #SBATCH --ntasks=8      #<----- número de procesos que se requieran
 #SBATCH --cpus-per-task=1 #<--- dejarlo en 1 u omitirlo
-#SBATCH --time=1:00:00    #tiempo de ejecucion (maximo 168 hrs)
+#SBATCH --time=48:00:00    #tiempo de ejecucion (maximo 168 hrs)
 #SBATCH --partition=cpu   #solo hay una cola, asi que puede omitirse
 
 

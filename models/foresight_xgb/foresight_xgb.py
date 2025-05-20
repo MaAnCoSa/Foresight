@@ -1,137 +1,154 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
-from sklearn.utils.class_weight import compute_class_weight
-
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-
-import dagshub
-import mlflow
+import seaborn as sns
+import joblib
+import json
+import hashlib
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 
+from sklearn.metrics import (
+    accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report
+)
+from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
+from xgboost import XGBClassifier
+from imblearn.over_sampling import SMOTE
+import mlflow
+import mlflow.xgboost
+
+# -------------------- CONFIGURACIÓN --------------------
 load_dotenv()
-
-print("-------------------------------------------------------")
-print("                  CONNECTING TO MLFLOW")
-print("-------------------------------------------------------")
-
-mlflow.set_tracking_uri(f"https://dagshub.com/{os.getenv("MLFLOW_TRACKING_USERNAME")}/my-first-repo.mlflow")
+os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/MaAnCoSa/Foresight.mlflow"
+os.environ["MLFLOW_TRACKING_USERNAME"] = "Jesolis14"
+os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("MLFLOW_TRACKING_PASSWORD")
+mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment("foresight_xgb")
+run_name = f"xgb_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-
+# -------------------- CARGA DE DATOS --------------------
 print("-------------------------------------------------------")
-print("                    SPLITTING DATA")
+print("                    LOADING DATA")
 print("-------------------------------------------------------")
 
-combats_df = pd.read_csv("../../data/processed/combats_df.csv")
+train_df = pd.read_csv("../../data/processed/combats_train.csv")
+test_df = pd.read_csv("../../data/processed/combats_test.csv")
 
-from sklearn.model_selection import train_test_split
+X_train = train_df.drop("difficulty", axis=1)
+y_train = train_df["difficulty"]
+X_test = test_df.drop("difficulty", axis=1)
+y_test = test_df["difficulty"]
 
-X = combats_df.drop("difficulty", axis=1)
-y = combats_df["difficulty"]
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y)
-
-classes = np.unique(y_train)
-weights = compute_class_weight('balanced', classes=classes, y=y_train)
-class_weights = dict(zip(classes, weights))
-
+# -------------------- RESAMPLING --------------------
 print("-------------------------------------------------------")
 print("                    RESAMPLING DATA")
 print("-------------------------------------------------------")
 
-from imblearn.over_sampling import SMOTE
-from collections import Counter
+smote = SMOTE(random_state=42)
+X_resample, y_resample = smote.fit_resample(X_train, y_train)
 
-ada = SMOTE (random_state=42)
-print("Haciendo resampling...")
-X_resample, y_resample  = ada.fit_resample( X_train, y_train )
+# -------------------- CONFIGURACIÓN DEL MODELO --------------------
+param_dist = {
+    "n_estimators": [50, 100, 200],
+    "max_depth": [4, 6, 8, 10],
+    "learning_rate": [0.01, 0.05, 0.1, 0.3],
+    "colsample_bytree": [0.3, 0.5, 0.7, 1.0],
+    "subsample": [0.5, 0.8, 1.0],
+    "reg_alpha": [0, 0.1, 0.5],
+    "reg_lambda": [1.0, 1.5, 2.0]
+}
 
-print(Counter(y_resample))
+model = XGBClassifier(
+    objective="multi:softmax",
+    num_class=5,
+    random_state=42,
+    verbosity=0
+)
 
-# from imblearn.under_sampling import RandomUnderSampler
-# from collections import Counter
+cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
 
-# rus = RandomUnderSampler( random_state = 42 )
-# X_resample, y_resample = rus.fit_resample(X_train, y_train)
+search = RandomizedSearchCV(
+    estimator=model,
+    param_distributions=param_dist,
+    n_iter=10,
+    scoring="accuracy",
+    n_jobs=2,
+    cv=cv,
+    verbose=2,
+    random_state=42
+)
 
-# print(Counter(y_resample))
+# -------------------- ENTRENAMIENTO Y MLFLOW --------------------
+with mlflow.start_run(run_name=run_name):
+    mlflow.xgboost.autolog()
 
+    search.fit(X_resample, y_resample)
+    best_model = search.best_estimator_
+    y_pred = best_model.predict(X_test)
 
+    acc_resample = best_model.score(X_resample, y_resample)
+    acc_test = accuracy_score(y_test, y_pred)
 
+    mlflow.log_metric("score_on_resampled_train", acc_resample)
+    mlflow.log_metric("val_accuracy", acc_test)
 
-# # XGBoost
+    # -------------------- MATRICES DE CONFUSIÓN --------------------
+    cm = confusion_matrix(y_test, y_pred)
+    cm_norm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
-from xgboost import XGBClassifier
+    fig, ax = plt.subplots(figsize=(6, 6))
+    sns.heatmap(cm_norm, annot=True, fmt=".2f", cmap="Blues", ax=ax)
+    ax.set_title("Normalized Confusion Matrix")
+    plt.tight_layout()
+    plt.savefig("confusion_matrix_normalized.jpg")
+    mlflow.log_artifact("confusion_matrix_normalized.jpg")
+    plt.close()
 
-with mlflow.start_run():
+    fig, ax = plt.subplots(figsize=(6, 6))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=np.unique(y_test))
+    disp.plot(ax=ax, cmap="Blues")
+    plt.title("Confusion Matrix")
+    plt.tight_layout()
+    plt.savefig("confusion_matrix.jpg")
+    mlflow.log_artifact("confusion_matrix.jpg")
+    plt.close()
 
-    n_estimators = 200
-    max_depth = 15
-    lr = 0.00001
-    colsample_bytree=0.5
+    # -------------------- REPORTE DE CLASIFICACIÓN --------------------
+    report = classification_report(y_test, y_pred, output_dict=True)
 
-    print("-------------------------------------------------------")
-    print("                      PARAMETERS")
-    print("-------------------------------------------------------")
-    print("")
-    print(f"\tn_estimators = {n_estimators}")
-    print(f"\tmax_depth = {max_depth}")
-    print(f"\tlr = {lr}")
-    print(f"\tcolsample_bytree = {colsample_bytree}")
-    print("")
-    mlflow.log_param('n_estimators', n_estimators)
-    mlflow.log_param('max_depth', max_depth)
-    mlflow.log_param('lr', lr)
-    mlflow.log_param('colsample_bytree', colsample_bytree)
+    # JSON
+    with open("classification_report.json", "w") as f:
+        json.dump(report, f, indent=4)
+    mlflow.log_artifact("classification_report.json")
 
-    model = XGBClassifier(
-        objective='multi:softmax',
-        num_class=5,
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        learning_rate=lr,
-        subsample=0.8,
-        colsample_bytree=colsample_bytree,
-        random_state=42
-    )
+    # Markdown
+    with open("classification_report.md", "w") as f:
+        f.write("# Clasification Report\n\n")
+        for label, scores in report.items():
+            if isinstance(scores, dict):
+                f.write(f"## Class {label}\n")
+                for metric, val in scores.items():
+                    f.write(f"- **{metric}**: {val:.4f}\n")
+                f.write("\n")
+    mlflow.log_artifact("classification_report.md")
 
-    print("-------------------------------------------------------")
-    print("                    TRAINING CGBOOST")
-    print("-------------------------------------------------------")
+    # -------------------- GUARDADO DE MODELO --------------------
+    joblib.dump(best_model, "best_model_xgb.pkl")
+    mlflow.log_artifact("best_model_xgb.pkl")
 
-    model.fit(X_resample, y_resample)
+    joblib.dump(search, "random_search_object.pkl")
+    mlflow.log_artifact("random_search_object.pkl")
 
-    train_accuracy = model.score(X_resample, y_resample)
-
-    y_pred = model.predict(X_test)
-
-    val_accuracy = accuracy_score(y_test, y_pred)
-
-    print("-------------------------------------------------------")
-    print("                         SCORES")
-    print("-------------------------------------------------------")
-    print("")
-    print(f"\tTrain Accuracy :\t{train_accuracy}")
-    print(f"\tVal Accuracy: \t\t{val_accuracy}")
-    print("")
-    mlflow.log_metric('train_accuracy', train_accuracy)
-    mlflow.log_metric('val_accuracy', val_accuracy)
-
-    mlflow.xgboost.log_model(model, "xgboost_model")
-    
-    from sklearn.metrics import  ConfusionMatrixDisplay
-    from sklearn.metrics import confusion_matrix
-
-    fig = plt.figure(figsize=(16, 16))
-    con = confusion_matrix( y_test , y_pred )
-    disp = ConfusionMatrixDisplay( confusion_matrix = con,  display_labels = range(5) ).plot()
-    plt.savefig("matriz.jpg")
-    mlflow.log_artifact("matriz.jpg")
+    # -------------------- HASH DEL SCRIPT (opcional) --------------------
+    try:
+        with open(__file__, "rb") as f:
+            code_hash = hashlib.md5(f.read()).hexdigest()
+            mlflow.log_param("script_md5", code_hash)
+    except:
+        pass  # Entorno interactivo no define __file__
 
 print("-------------------------------------------------------")
-print("                          END")
+print("                        END")
 print("-------------------------------------------------------")
+
