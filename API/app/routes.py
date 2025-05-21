@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from utils import predict_with_model
+from utils import predict_with_model, CombatInput
 from auth import Authenticate
 import os
 import mlflow
@@ -9,18 +9,17 @@ import subprocess
 router = APIRouter()
 
 @router.post('/predict/combat', tags=['Predictions'], dependencies=[Depends(Authenticate())])
-def prediction(request: Request, input_data ):
+def prediction(request: Request, input_data: CombatInput ):
     try:
-        response_example = {
-            "code": 200,
-            "data": None
-        }
         prediction = predict_with_model(request, input_data)
-        response_example['data'] = prediction
-        return JSONResponse(status_code=response_example['code'], content=response_example)
+        response = {
+            'code': 200,
+            'data': prediction
+        }
+        return JSONResponse(status_code=response['code'], content=response)
 
     except Exception as error:
-        return JSONResponse(status_code=400, content=error)
+        return HTTPException(status_code=400, detail=str(error))
     
 @router.post('/model/load', tags=['Model'])#, dependencies=[Depends(Authenticate())])
 def change_model(name: str, version: str = 'latest', request: Request = None):
