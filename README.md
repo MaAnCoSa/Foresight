@@ -1,4 +1,4 @@
-# Foresight: Predicting Encounter Difficulty in Dungeons & Dragons
+git sta# Foresight: Predicting Encounter Difficulty in Dungeons & Dragons
 
 <img src="docs\images\foresight_frontpage_image.webp" />
 
