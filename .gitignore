@@ -32,3 +32,6 @@ foresight/*.jpg
 foresight/.env
 foresight/https\x3a/
 foresight/*.chuy
+
+API/*.env
+API/app/*cache*
