@@ -209,3 +209,13 @@ All experiment results, including metrics, classification reports, and model art
 
 --------
 
+
+## Authors
+
+**MANUEL ANDRÉS COTA SANTELIZ** <a href="https://github.com/MaAnCoSa" target="_blank"> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub" height="24"></a><a href="https://www.linkedin.com/in/maancosa/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" alt="LinkedIn" height="24">
+</a>
+
+**GERARD LEYVA CONDE**  <a href="https://github.com/GerardoLeyvaConde" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub" height="24"></a><a href="https://www.linkedin.com/in/gerardo-leyva/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" alt="LinkedIn" height="24"></a>
+
+**JESÚS MANUEL SOLÍS DURÁN**  <a href="https://github.com/Jesolis14" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub" height="24"></a><a href="https://www.linkedin.com/in/jesolis14/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" alt="LinkedIn" height="24"></a>
+
