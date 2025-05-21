@@ -1,4 +1,4 @@
-git sta# Foresight: Predicting Encounter Difficulty in Dungeons & Dragons
+# Foresight: Predicting Encounter Difficulty in Dungeons & Dragons
 
 <img src="docs\images\foresight_frontpage_image.webp" />
 
@@ -154,13 +154,6 @@ All experiment results, including metrics, classification reports, and model art
 
 ![MLflow Screenshot](docs/images/mlflow_example.png)
 
----
-
-### Example 4: Jupyter Notebook Exploration
-
-We use Jupyter notebooks to perform exploratory data analysis and feature engineering.
-
-![Notebook Example](docs/images/notebook_example.png)
 
 
 ## Project Organization
