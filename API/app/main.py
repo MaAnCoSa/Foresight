@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from routes import router
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 descripcion = """
     API de Foresight.
@@ -29,7 +30,10 @@ async def lifespan(app: FastAPI):
         raise ValueError("Falta definir MODEL_URI en variables de entorno")
     
     model = mlflow.pyfunc.load_model(model_uri)
+    model_name = model_uri.split("/")[1]
+
     app.state.model = model
+    app.state.model_name = model_name
 
     TOKEN = os.getenv("TOKEN")
     if not TOKEN:
@@ -45,6 +49,14 @@ app = FastAPI(
     terms_of_service="http://example.com/terms/",
     openapi_tags=tags_metadata,
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],  # o especificar métodos: ["GET", "POST"]
+    allow_headers=["*"],
 )
 
 app.include_router(router)
