@@ -10,7 +10,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from sklearn.metrics import (
-    accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report
+    accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report, precision_score, recall_score, f1_score
 )
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
 from xgboost import XGBClassifier
@@ -90,6 +90,16 @@ with mlflow.start_run(run_name=run_name):
     acc_resample = best_model.score(X_resample, y_resample)
     acc_test = accuracy_score(y_test, y_pred)
 
+
+    # Macro metrics
+    f1_macro = f1_score(y_test, y_pred, average="macro")
+    precision_macro = precision_score(y_test, y_pred, average="macro")
+    recall_macro = recall_score(y_test, y_pred, average="macro")
+
+    # Log in MLflow
+    mlflow.log_metric("val_f1_macro", f1_macro)
+    mlflow.log_metric("val_precision_macro", precision_macro)
+    mlflow.log_metric("val_recall_macro", recall_macro)
     mlflow.log_metric("score_on_resampled_train", acc_resample)
     mlflow.log_metric("val_accuracy", acc_test)
 
