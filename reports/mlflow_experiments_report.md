@@ -18,7 +18,7 @@
   - lr: 0.001
   - tuner/bracket: 2
   - tuner/trial_id: 0011
-  - activation_0: relu
+  - activation_0: reluv
   - units_1: 48
   - tuner/round: 1
   - units_0: 50

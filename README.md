@@ -1,4 +1,4 @@
-git sta# Foresight: Predicting Encounter Difficulty in Dungeons & Dragons
+# Foresight: Predicting Encounter Difficulty in Dungeons & Dragons
 
 <img src="docs\images\foresight_frontpage_image.webp" />
 
@@ -154,13 +154,6 @@ All experiment results, including metrics, classification reports, and model art
 
 ![MLflow Screenshot](docs/images/mlflow_example.png)
 
----
-
-### Example 4: Jupyter Notebook Exploration
-
-We use Jupyter notebooks to perform exploratory data analysis and feature engineering.
-
-![Notebook Example](docs/images/notebook_example.png)
 
 
 ## Project Organization
@@ -216,3 +209,11 @@ We use Jupyter notebooks to perform exploratory data analysis and feature engine
 
 --------
 
+
+## Authors
+
+**MANUEL ANDRÉS COTA SANTELIZ**  <a href="https://github.com/MaAnCoSa" target="_blank"><img src="https://img.icons8.com/ios-filled/50/ffffff/github.png" alt="GitHub" height="24"></a><a href="https://www.linkedin.com/in/maancosa/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" alt="LinkedIn" height="24"></a>
+
+**GERARD LEYVA CONDE**  <a href="https://github.com/GerardoLeyvaConde" target="_blank"><img src="https://img.icons8.com/ios-filled/50/ffffff/github.png" alt="GitHub" height="24"></a><a href="https://www.linkedin.com/in/gerardo-leyva/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" alt="LinkedIn" height="24"></a>
+
+**JESÚS MANUEL SOLÍS DURÁN**  <a href="https://github.com/Jesolis14" target="_blank"><img src="https://img.icons8.com/ios-filled/50/ffffff/github.png" alt="GitHub" height="24"></a><a href="https://www.linkedin.com/in/jesolis14/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" alt="LinkedIn" height="24"></a>
